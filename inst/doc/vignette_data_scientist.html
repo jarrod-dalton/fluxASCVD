@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Implementing an Event-Driven ASCVD Simulator with patientSimCore</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Implementing an Event-Driven ASCVD Simulator with
+patientSimCore</h1>
+</header>
+<h1 id="overview">Overview</h1>
+<p>This vignette is for data scientists implementing a pedagogical ASCVD
+care trajectory model on top of <code>patientSimCore</code>. The
+objective is to teach the mechanics of building a clinically credible
+event-driven model: jittered clinic visits with no-shows,
+encounter-driven labs (ordered at visits and drawn later), ordinal
+treatment escalation, and a terminal composite ASCVD event process.</p>
+<p>The statistical models here are deliberately simple placeholders. The
+key architectural point is that you can replace the placeholders with ML
+models without changing the Engine–ModelBundle contract.</p>
+<p>This package (<code>patientSimASCVD</code>) depends on
+<code>patientSimCore (&gt;= 0.10.0)</code>.</p>
+<h1 id="how-the-pieces-fit">How the pieces fit</h1>
+<p>At runtime:</p>
+<ol type="1">
+<li>A <code>Patient</code> exists with event-sourced state and a global
+time axis (years in this model).</li>
+<li>An <code>Engine</code> asks the bundle for proposed future events
+across processes.</li>
+<li>The earliest event is selected, and <code>transition()</code> is
+applied.</li>
+<li>Some processes refresh their proposals (default: after any state
+update).</li>
+<li>The simulation stops when <code>stop()</code> returns
+<code>TRUE</code> (here: a terminal ASCVD event).</li>
+</ol>
+<h1 id="the-package-entry-points">The package entry points</h1>
+<p>The model package provides:</p>
+<ul>
+<li><code>ascvd_schema()</code> (model-specific schema, including
+blocks)</li>
+<li><code>ascvd_model_bundle()</code> (a ModelBundle compatible with
+<code>patientSimCore::Engine</code>)</li>
+</ul>
+<p>Below we walk through the <em>actual code</em> in this repo and
+explain the intent of each part.</p>
+<h1 id="schema-state-blocks-and-required-variables">Schema: state,
+blocks, and required variables</h1>
+<p>The schema defines what state exists, defaults, and how variables are
+grouped into clinical panels (blocks).</p>
+<p>In the pedagogical model we group: - BP: <code>sbp</code>,
+<code>dbp</code> - BMP: sodium, potassium, creatinine, glucose - Lipids:
+LDL, HDL, triglycerides - Treatments: antihypertensive count and statin
+intensity - Operational ordering state: order times for BMP and
+lipids</p>
+<p>Here is the current schema implementation:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------------------------</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ASCVD patient schema</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Defines required core state, panels (blocks), treatments, and lab order state.</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Age and sex are required at patient instantiation.</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------------------------</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>ascvd_schema <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  schema <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">default_patient_schema</span>()</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>age<span class="sc">$</span>required <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>sex<span class="sc">$</span>required <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>sbp<span class="sc">$</span>blocks <span class="ot">&lt;-</span> <span class="st">&quot;bp&quot;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>dbp<span class="sc">$</span>blocks <span class="ot">&lt;-</span> <span class="st">&quot;bp&quot;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>sodium<span class="sc">$</span>blocks <span class="ot">&lt;-</span> <span class="st">&quot;bmp&quot;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>potassium<span class="sc">$</span>blocks <span class="ot">&lt;-</span> <span class="st">&quot;bmp&quot;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>creatinine<span class="sc">$</span>blocks <span class="ot">&lt;-</span> <span class="st">&quot;bmp&quot;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>glucose<span class="sc">$</span>blocks <span class="ot">&lt;-</span> <span class="st">&quot;bmp&quot;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>ldl<span class="sc">$</span>blocks <span class="ot">&lt;-</span> <span class="st">&quot;lipids&quot;</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>hdl<span class="sc">$</span>blocks <span class="ot">&lt;-</span> <span class="st">&quot;lipids&quot;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>triglycerides<span class="sc">$</span>blocks <span class="ot">&lt;-</span> <span class="st">&quot;lipids&quot;</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>n_antihypertensives <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">default =</span> <span class="dv">0</span>, <span class="at">blocks =</span> <span class="st">&quot;tx_htn&quot;</span>)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>statin_intensity <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">default =</span> <span class="st">&quot;none&quot;</span>, <span class="at">blocks =</span> <span class="st">&quot;tx_lipid&quot;</span>)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>bmp_order_time <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">default =</span> <span class="cn">NA_real_</span>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>lipid_order_time <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">default =</span> <span class="cn">NA_real_</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  schema<span class="sc">$</span>ascvd <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">default =</span> <span class="dv">0</span>)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>  schema</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><strong>What to change later</strong> - Mark <code>age</code> and
+<code>sex</code> as required (preferred) and enforce at patient
+instantiation. - Add explicit domains (ordered factor for statins;
+integer 0–4 for antihypertensives). - Define blocks as many-to-many if
+you later add overlap (e.g., CMP containing BMP).</p>
+<h1 id="modelbundle-constructor">ModelBundle constructor</h1>
+<p><code>patientSimCore</code> expects a named list with functions
+implementing the ModelBundle contract.</p>
+<p>Here is the bundle constructor:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------------------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ASCVD ModelBundle constructor</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------------------------</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>ascvd_model_bundle <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">params =</span> <span class="fu">list</span>()) {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">propose_events =</span> propose_events_ascvd,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">transition =</span> transition_ascvd,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">stop =</span> stop_ascvd</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>In a fuller implementation, this is where you would: - accept a
+<code>params</code> list (or draws) and close over them - attach
+<code>observe()</code> if you want an observation table - supply custom
+<code>refresh_rules</code> if you want process-specific refresh
+behavior</p>
+<h1 id="proposing-events-multiple-processes-on-one-time-axis">Proposing
+events: multiple processes on one time axis</h1>
+<p><code>propose_events(patient, ctx)</code> returns a <em>list of
+candidate events</em>, typically one per process. Each candidate
+includes a <code>time_next</code>, an <code>event_type</code>, and a
+<code>process_id</code>.</p>
+<p>This repo uses processes: - <code>clinic</code>: proposes the next
+scheduled clinic visit - <code>bmp</code>: proposes a BMP draw <em>only
+if ordered</em> - <code>lipids</code>: proposes a lipid panel draw
+<em>only if ordered</em> - <code>ascvd</code>: proposes a terminal ASCVD
+event time</p>
+<p>Here is the proposal function:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>propose_events_ascvd <span class="ot">&lt;-</span> <span class="cf">function</span>(patient, ctx) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  events <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Clinic visit proposal</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  t_next <span class="ot">&lt;-</span> patient<span class="sc">$</span>time <span class="sc">+</span> stats<span class="sc">::</span><span class="fu">rgamma</span>(<span class="dv">1</span>, <span class="at">shape =</span> <span class="dv">4</span>, <span class="at">rate =</span> <span class="dv">12</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  events<span class="sc">$</span>clinic <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">time_next =</span> t_next,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">event_type =</span> <span class="st">&quot;clinic_visit&quot;</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">process_id =</span> <span class="st">&quot;clinic&quot;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># BMP draw if ordered</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  bmp_time <span class="ot">&lt;-</span> patient<span class="sc">$</span><span class="fu">state</span>(<span class="st">&quot;bmp_order_time&quot;</span>)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(bmp_time)) {</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    events<span class="sc">$</span>bmp <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">time_next =</span> bmp_time,</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">event_type =</span> <span class="st">&quot;bmp_draw&quot;</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">process_id =</span> <span class="st">&quot;bmp&quot;</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Lipid draw if ordered</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  lipid_time <span class="ot">&lt;-</span> patient<span class="sc">$</span><span class="fu">state</span>(<span class="st">&quot;lipid_order_time&quot;</span>)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(lipid_time)) {</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    events<span class="sc">$</span>lipids <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>      <span class="at">time_next =</span> lipid_time,</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>      <span class="at">event_type =</span> <span class="st">&quot;lipid_draw&quot;</span>,</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>      <span class="at">process_id =</span> <span class="st">&quot;lipids&quot;</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Terminal ASCVD event</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  lambda <span class="ot">&lt;-</span> <span class="fl">0.02</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>  t_ascvd <span class="ot">&lt;-</span> patient<span class="sc">$</span>time <span class="sc">+</span> stats<span class="sc">::</span><span class="fu">rexp</span>(<span class="dv">1</span>, <span class="at">rate =</span> lambda)</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  events<span class="sc">$</span>ascvd <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">time_next =</span> t_ascvd,</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">event_type =</span> <span class="st">&quot;ascvd_event&quot;</span>,</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">process_id =</span> <span class="st">&quot;ascvd&quot;</span>,</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">ascvd_type =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;mi&quot;</span>, <span class="st">&quot;stroke&quot;</span>, <span class="st">&quot;death&quot;</span>), <span class="dv">1</span>)</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>  events</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="encounter-driven-labs-option-b">Encounter-driven labs (Option
+B)</h3>
+<p>Notice the lab processes only propose events if
+<code>bmp_order_time</code> or <code>lipid_order_time</code> is set.
+This is the core mechanism that makes labs encounter-driven:</p>
+<ul>
+<li>At a clinic visit, <code>transition()</code> can place orders by
+setting <code>bmp_order_time</code> /
+<code>lipid_order_time</code>.</li>
+<li>The proposal layer sees the order and schedules the draw.</li>
+<li>The lab draw transition clears the order back to
+<code>NA</code>.</li>
+</ul>
+<p>That is a clinically interpretable “order → draw → result” lifecycle,
+and it is easy to extend with turnaround delays or noncompliance.</p>
+<h1 id="transitions-atomic-state-updates-per-event">Transitions: atomic
+state updates per event</h1>
+<p><code>transition(patient, event, ctx)</code> receives the full
+<code>event</code> object. It returns either: - a named list of state
+changes (applied as an atomic update), or - <code>NULL</code> (meaning:
+no state changes for this event)</p>
+<p>Here is the current transition implementation:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>transition_ascvd <span class="ot">&lt;-</span> <span class="cf">function</span>(patient, event, ctx) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  et <span class="ot">&lt;-</span> event<span class="sc">$</span>event_type</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (et <span class="sc">==</span> <span class="st">&quot;clinic_visit&quot;</span>) {</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># No-show model (simple)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (stats<span class="sc">::</span><span class="fu">runif</span>(<span class="dv">1</span>) <span class="sc">&lt;</span> <span class="fl">0.2</span>) <span class="fu">return</span>(<span class="cn">NULL</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    updates <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># BP update</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    sbp <span class="ot">&lt;-</span> patient<span class="sc">$</span><span class="fu">state</span>(<span class="st">&quot;sbp&quot;</span>) <span class="sc">+</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">5</span>, <span class="dv">10</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    dbp <span class="ot">&lt;-</span> patient<span class="sc">$</span><span class="fu">state</span>(<span class="st">&quot;dbp&quot;</span>) <span class="sc">+</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">3</span>, <span class="dv">5</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    updates <span class="ot">&lt;-</span> <span class="fu">c</span>(updates, <span class="fu">list</span>(<span class="at">sbp =</span> sbp, <span class="at">dbp =</span> dbp))</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># HTN intensification</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (sbp <span class="sc">&gt;</span> <span class="dv">130</span> <span class="sc">||</span> dbp <span class="sc">&gt;</span> <span class="dv">80</span>) {</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>      n <span class="ot">&lt;-</span> patient<span class="sc">$</span><span class="fu">state</span>(<span class="st">&quot;n_antihypertensives&quot;</span>)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>      updates<span class="sc">$</span>n_antihypertensives <span class="ot">&lt;-</span> <span class="fu">min</span>(n <span class="sc">+</span> <span class="dv">1</span>, <span class="dv">4</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Order labs</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    updates<span class="sc">$</span>bmp_order_time <span class="ot">&lt;-</span> event<span class="sc">$</span>time_next</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    updates<span class="sc">$</span>lipid_order_time <span class="ot">&lt;-</span> event<span class="sc">$</span>time_next</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(updates)</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (et <span class="sc">==</span> <span class="st">&quot;bmp_draw&quot;</span>) {</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>      <span class="at">sodium =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">140</span>, <span class="dv">2</span>),</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>      <span class="at">potassium =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="fl">4.2</span>, <span class="fl">0.3</span>),</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>      <span class="at">creatinine =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="fl">1.0</span>, <span class="fl">0.1</span>),</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>      <span class="at">glucose =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">100</span>, <span class="dv">10</span>),</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>      <span class="at">bmp_order_time =</span> <span class="cn">NA_real_</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    ))</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (et <span class="sc">==</span> <span class="st">&quot;lipid_draw&quot;</span>) {</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>      <span class="at">ldl =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">100</span>, <span class="dv">20</span>),</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>      <span class="at">hdl =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">50</span>, <span class="dv">10</span>),</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>      <span class="at">triglycerides =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">150</span>, <span class="dv">40</span>),</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>      <span class="at">lipid_order_time =</span> <span class="cn">NA_real_</span></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    ))</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (et <span class="sc">==</span> <span class="st">&quot;ascvd_event&quot;</span>) {</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">ascvd =</span> <span class="dv">1</span>))</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>  <span class="cn">NULL</span></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="clinic-visits-and-no-shows">Clinic visits and no-shows</h3>
+<p>In this pedagogical code, no-shows are implemented as a random
+branch. When a no-show occurs, <code>transition()</code> returns
+<code>NULL</code>.</p>
+<p>That means: - no BP measurement - no treatment changes - no lab
+orders - no state changes at all</p>
+<p>The missed visit is still an event in the log; derived variables
+(like a no-show count) can be computed from history.</p>
+<h3 id="bp-as-a-vectorized-update">BP as a vectorized update</h3>
+<p>SBP/DBP are updated together (even in this simple implementation). In
+a fuller version, you would compute a joint update (e.g., multivariate
+normal) and then apply it as a BP block update using
+<code>patientSimCore::update_block()</code> and
+<code>patientSimCore::combine_updates()</code>.</p>
+<h3 id="treatment-escalation">Treatment escalation</h3>
+<p>The current code intensifies antihypertensives when SBP &gt; 130 or
+DBP &gt; 80, capped at 4. This is a placeholder for a decision model.
+Later you can: - fit an ordinal model for escalation probability
+(inertia) - replace with an ML policy model - incorporate
+contraindications or adverse labs</p>
+<h3 id="ordering-labs-at-visits">Ordering labs at visits</h3>
+<p>When a visit is attended, this code places both BMP and lipid orders
+immediately by setting order times to the visit time. In a more
+realistic version you would condition orders on “due-ness” (time since
+last draw), risk tier, recent abnormalities, or medication changes.</p>
+<h1 id="terminal-ascvd-events-and-stopping">Terminal ASCVD events and
+stopping</h1>
+<p>The ASCVD process proposes an event time. When that event occurs,
+<code>transition()</code> sets a terminal indicator and
+<code>stop()</code> halts the simulation.</p>
+<p>Here is the stop function:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>stop_ascvd <span class="ot">&lt;-</span> <span class="cf">function</span>(patient, event, ctx) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (event<span class="sc">$</span>event_type <span class="sc">==</span> <span class="st">&quot;ascvd_event&quot;</span>) <span class="fu">return</span>(<span class="cn">TRUE</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="cn">FALSE</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>You will typically also include a time-horizon stop (e.g., 10 years)
+for cohort simulations, even if a terminal event might occur
+earlier.</p>
+<h1 id="running-a-single-patient">Running a single patient</h1>
+<p>A typical minimal run looks like:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Schema + patient</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>schema <span class="ot">&lt;-</span> <span class="fu">ascvd_schema</span>()</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">new_patient</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">init =</span> <span class="fu">list</span>(<span class="at">age =</span> <span class="dv">60</span>, <span class="at">sex =</span> <span class="st">&quot;M&quot;</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">schema =</span> schema</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Bundle + engine</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>bundle <span class="ot">&lt;-</span> <span class="fu">ascvd_model_bundle</span>()</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>eng <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span>Engine<span class="sc">$</span><span class="fu">new</span>(<span class="at">bundle =</span> bundle)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Run</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>out <span class="ot">&lt;-</span> eng<span class="sc">$</span><span class="fu">run</span>(</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">patient =</span> p,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">ctx =</span> <span class="fu">list</span>(<span class="at">time_unit =</span> <span class="st">&quot;years&quot;</span>),</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_events =</span> <span class="dv">50</span>,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">return_observations =</span> <span class="cn">FALSE</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect patient event log and final state</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>out<span class="sc">$</span>patient<span class="sc">$</span><span class="fu">events</span>()</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>out<span class="sc">$</span>patient<span class="sc">$</span><span class="fu">state</span>()</span></code></pre></div>
+<h1 id="where-to-swap-in-ml-models-without-changing-the-contract">Where
+to swap in ML models (without changing the contract)</h1>
+<p>This pedagogical model is intentionally modular. The best swap-in
+points are pure functions that return:</p>
+<ul>
+<li>a visit interval distribution (or direct next-visit time)</li>
+<li>a no-show probability</li>
+<li>a joint BP update (SBP/DBP)</li>
+<li>a BMP panel update</li>
+<li>a lipid panel update</li>
+<li>treatment decisions (ordinal escalation)</li>
+<li>a terminal ASCVD hazard or survival distribution</li>
+</ul>
+<p>As long as these functions return the same <em>types</em> expected by
+the transition and proposal layers, the Engine-facing ModelBundle
+contract does not change.</p>
+<h1 id="closing-note">Closing note</h1>
+<p>The engine is not the model. The model is the explicit set of
+assumptions about events, measurements, decisions, and risk. The point
+of <code>patientSimASCVD</code> is to make those assumptions visible
+today, and swappable tomorrow.</p>
+</body>
+</html>

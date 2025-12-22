@@ -1,122 +1,335 @@
 ---
 title: "Implementing an Event-Driven ASCVD Simulator with patientSimCore"
-output: html_vignette
+output: html_document
 ---
 
 # Overview
 
-This vignette is for data scientists implementing a pedagogical ASCVD care trajectory model on top of `patientSimCore`. The objective is to teach the mechanics of building a clinically credible event-driven model: visits with jitter and no-shows, encounter-driven labs (ordered at visits and drawn later), ordinal treatment escalation, and a terminal composite ASCVD event process.
+This vignette is for data scientists implementing a pedagogical ASCVD care trajectory model on top of `patientSimCore`.
+The objective is to teach the mechanics of building a clinically credible event-driven model: jittered clinic visits with no-shows, encounter-driven labs (ordered at visits and drawn later), ordinal treatment escalation, and a terminal composite ASCVD event process.
 
-The statistical models in this vignette are placeholders. The architectural point is that you can replace the placeholders with ML models without changing the Engine–ModelBundle contract.
+The statistical models here are deliberately simple placeholders. The key architectural point is that you can replace the placeholders with ML models without changing the Engine–ModelBundle contract.
 
-# The key abstraction: one patient, many processes, one time axis
+This package (`patientSimASCVD`) depends on `patientSimCore (>= 0.10.0)`.
 
-`patientSimCore` uses a single global time axis (in this model: years). Multiple event-generation processes propose future events on that axis: clinic scheduling, laboratory draws, and terminal events. At each step the Engine selects the earliest proposed event, applies a state transition, and refreshes future proposals according to refresh rules.
+# How the pieces fit
 
-The contract is event-centric: `transition(patient, event, ctx)` receives the full event object, and returns a named list of state changes (or `NULL` for no changes).
+At runtime:
+
+1. A `Patient` exists with event-sourced state and a global time axis (years in this model).
+2. An `Engine` asks the bundle for proposed future events across processes.
+3. The earliest event is selected, and `transition()` is applied.
+4. Some processes refresh their proposals (default: after any state update).
+5. The simulation stops when `stop()` returns `TRUE` (here: a terminal ASCVD event).
+
+# The package entry points
+
+The model package provides:
+
+- `ascvd_schema()` (model-specific schema, including blocks)
+- `ascvd_model_bundle()` (a ModelBundle compatible with `patientSimCore::Engine`)
+
+Below we walk through the *actual code* in this repo and explain the intent of each part.
 
 # Schema: state, blocks, and required variables
 
-Start by defining a schema for the ASCVD model. This schema is the model’s “data dictionary”: which state variables exist, their defaults, and their block membership.
+The schema defines what state exists, defaults, and how variables are grouped into clinical panels (blocks).
 
-In this pedagogical ASCVD model, `age` and `sex` are required. You should enforce this at patient instantiation rather than delaying failure until the model attempts to read them. This makes simulations fail fast and makes assumptions explicit.
+In the pedagogical model we group:
+- BP: `sbp`, `dbp`
+- BMP: sodium, potassium, creatinine, glucose
+- Lipids: LDL, HDL, triglycerides
+- Treatments: antihypertensive count and statin intensity
+- Operational ordering state: order times for BMP and lipids
 
-Define blocks for BP, BMP, and lipids. Define treatment variables (`n_antihypertensives`, `statin_intensity`) as core state. Track lab orders as state (`bmp_order_time`, `lipid_order_time`) because they represent operational commitments that influence future event proposals.
+Here is the current schema implementation:
 
-# ModelBundle structure
+```r
+# ------------------------------------------------------------------------------
+# ASCVD patient schema
+#
+# Defines required core state, panels (blocks), treatments, and lab order state.
+# Age and sex are required at patient instantiation.
+# ------------------------------------------------------------------------------
+ascvd_schema <- function() {
+  schema <- patientSimCore::default_patient_schema()
 
-Implement the ASCVD model as a ModelBundle with three required functions:
+  schema$age$required <- TRUE
+  schema$sex$required <- TRUE
 
-- `propose_events(patient, ctx)` returns a list of event candidates across processes.
-- `transition(patient, event, ctx)` returns a named list of state changes or `NULL`.
-- `stop(patient, event, ctx)` returns TRUE/FALSE to indicate terminal conditions.
+  schema$sbp$blocks <- "bp"
+  schema$dbp$blocks <- "bp"
 
-Optionally implement `observe(patient, event, ctx)` to collect observation rows at visits and labs.
+  schema$sodium$blocks <- "bmp"
+  schema$potassium$blocks <- "bmp"
+  schema$creatinine$blocks <- "bmp"
+  schema$glucose$blocks <- "bmp"
 
-# Proposal layer: processes and encounter-driven labs
+  schema$ldl$blocks <- "lipids"
+  schema$hdl$blocks <- "lipids"
+  schema$triglycerides$blocks <- "lipids"
 
-Implement separate processes for:
+  schema$n_antihypertensives <- list(default = 0, blocks = "tx_htn")
+  schema$statin_intensity <- list(default = "none", blocks = "tx_lipid")
 
-1. clinic scheduling (`process_id = "clinic"`)
-2. BMP draws (`"bmp"`)
-3. lipid draws (`"lipids"`)
-4. terminal ASCVD events (`"ascvd"`)
+  schema$bmp_order_time <- list(default = NA_real_)
+  schema$lipid_order_time <- list(default = NA_real_)
 
-The clinician-facing requirement in this example is that labs are encounter-driven. A BMP draw can only be proposed if an order exists. That implies a two-stage mechanism:
+  schema$ascvd <- list(default = 0)
 
-- At an attended clinic visit, your transition logic sets `bmp_order_time` and/or `lipid_order_time` when ordering labs.
-- In `propose_events()`, the `"bmp"` and `"lipids"` processes only propose an event if their corresponding order time is not `NA`.
+  schema
+}
+```
 
-This design is simple, explicit, and clinically interpretable. It also generalizes: more complex order logic can be introduced later (turnaround times, noncompliance, delayed draws) without changing the Engine contract.
+**What to change later**
+- Mark `age` and `sex` as required (preferred) and enforce at patient instantiation.
+- Add explicit domains (ordered factor for statins; integer 0–4 for antihypertensives).
+- Define blocks as many-to-many if you later add overlap (e.g., CMP containing BMP).
 
-# Transition layer: atomic updates and vectorized panels
+# ModelBundle constructor
 
-Within `transition()`, you will often update multiple related variables at once. Use the `patientSimCore` helpers for block-based updates and combining updates:
+`patientSimCore` expects a named list with functions implementing the ModelBundle contract.
 
-- `update_block(patient, block, values, require_all = TRUE, unknown = "error")` validates the payload against schema and block membership and returns a named list of updates.
-- `combine_updates(...)` concatenates multiple update lists and errors on duplicate variable updates in one event.
+Here is the bundle constructor:
 
-For example, at an attended visit you might update BP, escalate antihypertensives, and place lab orders. Conceptually, these are separate submodels, but operationally they should be applied as one event with one `j` index. `combine_updates()` lets you keep each submodel readable while still committing a single atomic update payload.
+```r
+# ------------------------------------------------------------------------------
+# ASCVD ModelBundle constructor
+# ------------------------------------------------------------------------------
+ascvd_model_bundle <- function(params = list()) {
+  list(
+    propose_events = propose_events_ascvd,
+    transition = transition_ascvd,
+    stop = stop_ascvd
+  )
+}
+```
 
-# No-shows: log the miss, do not mutate state
+In a fuller implementation, this is where you would:
+- accept a `params` list (or draws) and close over them
+- attach `observe()` if you want an observation table
+- supply custom `refresh_rules` if you want process-specific refresh behavior
 
-In this pedagogical example, a no-show produces no state updates. The event is logged (so derived variables can count no-shows), but `transition()` returns `NULL`.
+# Proposing events: multiple processes on one time axis
 
-This is an explicit modeling choice. It keeps the model honest: missed care is represented by the absence of measurement and the absence of decision-making, not by simulated “proxy updates.”
+`propose_events(patient, ctx)` returns a *list of candidate events*, typically one per process.
+Each candidate includes a `time_next`, an `event_type`, and a `process_id`.
 
-Be aware of one implication: if you choose not to update `age` on no-shows, then time advances without age changing. If you decide this is undesirable, you can update age on all events while still leaving clinical measurements unchanged. Either approach is defensible as long as it is explicit.
+This repo uses processes:
+- `clinic`: proposes the next scheduled clinic visit
+- `bmp`: proposes a BMP draw *only if ordered*
+- `lipids`: proposes a lipid panel draw *only if ordered*
+- `ascvd`: proposes a terminal ASCVD event time
 
-# Hypertension policy: threshold and ordinal escalation
+Here is the proposal function:
 
-For antihypertensives, the intensification threshold is SBP > 130 or DBP > 80. Treatment is an ordinal count with a cap at 4 (representing 4+).
+```r
+propose_events_ascvd <- function(patient, ctx) {
+  events <- list()
 
-Implement escalation as either deterministic (always step up when uncontrolled) or probabilistic (inertia). The vignette should start with a simple policy and then discuss how a learned decision model could replace it later.
+  # Clinic visit proposal
+  t_next <- patient$time + stats::rgamma(1, shape = 4, rate = 12)
+  events$clinic <- list(
+    time_next = t_next,
+    event_type = "clinic_visit",
+    process_id = "clinic"
+  )
 
-# Statin policy: ordered intensity
+  # BMP draw if ordered
+  bmp_time <- patient$state("bmp_order_time")
+  if (!is.na(bmp_time)) {
+    events$bmp <- list(
+      time_next = bmp_time,
+      event_type = "bmp_draw",
+      process_id = "bmp"
+    )
+  }
 
-Statin intensity is an ordered factor: none < moderate < high. Even if you treat it as a predictor in risk models, ordinal encoding matters if you later model it as a response (a decision model).
+  # Lipid draw if ordered
+  lipid_time <- patient$state("lipid_order_time")
+  if (!is.na(lipid_time)) {
+    events$lipids <- list(
+      time_next = lipid_time,
+      event_type = "lipid_draw",
+      process_id = "lipids"
+    )
+  }
 
-Keep the policy simple at first: escalation based on LDL or a risk proxy, with inertia and a cap at high intensity.
+  # Terminal ASCVD event
+  lambda <- 0.02
+  t_ascvd <- patient$time + stats::rexp(1, rate = lambda)
+  events$ascvd <- list(
+    time_next = t_ascvd,
+    event_type = "ascvd_event",
+    process_id = "ascvd",
+    ascvd_type = sample(c("mi", "stroke", "death"), 1)
+  )
 
-# Terminal ASCVD event: a hazard process with subtype
+  events
+}
+```
 
-Model the terminal composite ASCVD event as a separate process that always proposes a candidate event. In the placeholder implementation, compute a hazard from current state (age, SBP, LDL, treatments) and draw time-to-event using an exponential distribution.
+### Encounter-driven labs (Option B)
 
-Attach an event subtype (MI, stroke, death) as metadata. Decide whether to store subtype in state or only in the event log. If the model stops immediately, storing subtype only in the log is often sufficient.
+Notice the lab processes only propose events if `bmp_order_time` or `lipid_order_time` is set.
+This is the core mechanism that makes labs encounter-driven:
 
-# Stop conditions
+- At a clinic visit, `transition()` can place orders by setting `bmp_order_time` / `lipid_order_time`.
+- The proposal layer sees the order and schedules the draw.
+- The lab draw transition clears the order back to `NA`.
 
-Stop the simulation when:
-- an ASCVD terminal event occurs, or
-- a time horizon is reached (e.g., `ctx$time_horizon_years`).
+That is a clinically interpretable “order → draw → result” lifecycle, and it is easy to extend with turnaround delays or noncompliance.
 
-The time horizon stop is important for cohort simulation and for vignettes that demonstrate stable follow-up without requiring events for every patient.
+# Transitions: atomic state updates per event
 
-# Observations and outputs
+`transition(patient, event, ctx)` receives the full `event` object.
+It returns either:
+- a named list of state changes (applied as an atomic update), or
+- `NULL` (meaning: no state changes for this event)
 
-Even if the core state is event-sourced, you often want a “measurement table” of what was observed at visits and labs. Implement `observe()` to emit a row at attended visits and at lab draws, including derived variables such as a BP control flag or risk proxy.
+Here is the current transition implementation:
 
-This separation is useful: state is what drives dynamics; observation tables are what you would compare to data during validation.
+```r
+transition_ascvd <- function(patient, event, ctx) {
+  et <- event$event_type
 
-# Cohort execution
+  if (et == "clinic_visit") {
+    # No-show model (simple)
+    if (stats::runif(1) < 0.2) return(NULL)
 
-Use `run_cohort()` when you want to run multiple patients, multiple parameter draws, and multiple simulations per draw. Ensure that `ctx$time_unit` is set to `"years"` to keep interpretation consistent.
+    updates <- list()
 
-In the pedagogical model package, keep cohort runs small and interpretable. The goal is to support teaching and early validation checks, not throughput.
+    # BP update
+    sbp <- patient$state("sbp") + stats::rnorm(1, -5, 10)
+    dbp <- patient$state("dbp") + stats::rnorm(1, -3, 5)
+    updates <- c(updates, list(sbp = sbp, dbp = dbp))
 
-# Replacing placeholders with ML models
+    # HTN intensification
+    if (sbp > 130 || dbp > 80) {
+      n <- patient$state("n_antihypertensives")
+      updates$n_antihypertensives <- min(n + 1, 4)
+    }
 
-The clean swap-in points are pure functions that return:
-- a visit interval distribution or direct next-visit time
+    # Order labs
+    updates$bmp_order_time <- event$time_next
+    updates$lipid_order_time <- event$time_next
+
+    return(updates)
+  }
+
+  if (et == "bmp_draw") {
+    return(list(
+      sodium = stats::rnorm(1, 140, 2),
+      potassium = stats::rnorm(1, 4.2, 0.3),
+      creatinine = stats::rnorm(1, 1.0, 0.1),
+      glucose = stats::rnorm(1, 100, 10),
+      bmp_order_time = NA_real_
+    ))
+  }
+
+  if (et == "lipid_draw") {
+    return(list(
+      ldl = stats::rnorm(1, 100, 20),
+      hdl = stats::rnorm(1, 50, 10),
+      triglycerides = stats::rnorm(1, 150, 40),
+      lipid_order_time = NA_real_
+    ))
+  }
+
+  if (et == "ascvd_event") {
+    return(list(ascvd = 1))
+  }
+
+  NULL
+}
+```
+
+### Clinic visits and no-shows
+
+In this pedagogical code, no-shows are implemented as a random branch. When a no-show occurs, `transition()` returns `NULL`.
+
+That means:
+- no BP measurement
+- no treatment changes
+- no lab orders
+- no state changes at all
+
+The missed visit is still an event in the log; derived variables (like a no-show count) can be computed from history.
+
+### BP as a vectorized update
+
+SBP/DBP are updated together (even in this simple implementation). In a fuller version, you would compute a joint update (e.g., multivariate normal) and then apply it as a BP block update using `patientSimCore::update_block()` and `patientSimCore::combine_updates()`.
+
+### Treatment escalation
+
+The current code intensifies antihypertensives when SBP > 130 or DBP > 80, capped at 4. This is a placeholder for a decision model. Later you can:
+- fit an ordinal model for escalation probability (inertia)
+- replace with an ML policy model
+- incorporate contraindications or adverse labs
+
+### Ordering labs at visits
+
+When a visit is attended, this code places both BMP and lipid orders immediately by setting order times to the visit time. In a more realistic version you would condition orders on “due-ness” (time since last draw), risk tier, recent abnormalities, or medication changes.
+
+# Terminal ASCVD events and stopping
+
+The ASCVD process proposes an event time. When that event occurs, `transition()` sets a terminal indicator and `stop()` halts the simulation.
+
+Here is the stop function:
+
+```r
+stop_ascvd <- function(patient, event, ctx) {
+  if (event$event_type == "ascvd_event") return(TRUE)
+  FALSE
+}
+```
+
+You will typically also include a time-horizon stop (e.g., 10 years) for cohort simulations, even if a terminal event might occur earlier.
+
+# Running a single patient
+
+A typical minimal run looks like:
+
+```r
+# Schema + patient
+schema <- ascvd_schema()
+p <- patientSimCore::new_patient(
+  init = list(age = 60, sex = "M"),
+  schema = schema
+)
+
+# Bundle + engine
+bundle <- ascvd_model_bundle()
+eng <- patientSimCore::Engine$new(bundle = bundle)
+
+# Run
+out <- eng$run(
+  patient = p,
+  ctx = list(time_unit = "years"),
+  max_events = 50,
+  return_observations = FALSE
+)
+
+# Inspect patient event log and final state
+out$patient$events()
+out$patient$state()
+```
+
+# Where to swap in ML models (without changing the contract)
+
+This pedagogical model is intentionally modular. The best swap-in points are pure functions that return:
+
+- a visit interval distribution (or direct next-visit time)
 - a no-show probability
-- a joint BP update
+- a joint BP update (SBP/DBP)
 - a BMP panel update
 - a lipid panel update
 - treatment decisions (ordinal escalation)
-- an ASCVD hazard or survival distribution
+- a terminal ASCVD hazard or survival distribution
 
-As long as these functions return the same types as the placeholders, the ModelBundle contract does not change.
+As long as these functions return the same *types* expected by the transition and proposal layers, the Engine-facing ModelBundle contract does not change.
 
 # Closing note
 
-The engine is not the model. The model is the bundle: the explicit statements about events, decisions, and risk. The point of the pedagogical ASCVD package is to make those statements visible and replaceable.
+The engine is not the model. The model is the explicit set of assumptions about events, measurements, decisions, and risk.
+The point of `patientSimASCVD` is to make those assumptions visible today, and swappable tomorrow.

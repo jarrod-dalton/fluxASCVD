@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>vignette_team_workflow</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="team-workflow-for-building-patient-level-simulation-models-meeting-guide">Team
+Workflow for Building Patient-Level Simulation Models (Meeting
+Guide)</h1>
+<p>This document is meant to be used live in team meetings. It is
+intentionally concise and operational. The assumption is that team
+members have already reviewed the role-based vignettes: one for the data
+scientist implementing the model and one for clinicians shaping the
+clinical logic.</p>
+<p>The goal here is not to debate every parameter. The goal is to reach
+shared clarity on: what we are modeling, what we are assuming, and what
+we will validate.</p>
+<h2 id="define-the-purpose-and-scope-in-one-paragraph">1) Define the
+purpose and scope in one paragraph</h2>
+<p>Start the meeting by agreeing on a single paragraph that answers:</p>
+<p>What population is being represented, what decisions will the model
+inform, and what outcomes are in scope?</p>
+<p>If the team cannot write this paragraph without caveats, the model
+will drift. Keep it specific. You can always broaden later.</p>
+<h2 id="agree-on-the-time-horizon-and-time-unit">2) Agree on the time
+horizon and time unit</h2>
+<p>For <code>patientSimASCVD</code>, the global time axis is in years.
+Decide the follow-up horizon (e.g., 5 years, 10 years). Confirm what
+“time zero” represents (baseline clinic entry, index diagnosis,
+post-discharge, etc.).</p>
+<p>This seems trivial until it isn’t. Many disagreements later are
+actually disagreements about what “baseline” means.</p>
+<h2 id="enumerate-the-event-types">3) Enumerate the event types</h2>
+<p>Write the event types on the board. For the pedagogical ASCVD model,
+start with:</p>
+<p>Clinic visit, no-show, BMP draw, lipid draw, ASCVD event (MI, stroke,
+death).</p>
+<p>Then ask: what did we miss that would change decisions or risk in a
+clinically meaningful way? If the answer is “nothing critical,” keep the
+list short.</p>
+<h2 id="define-the-state-variables-what-the-model-remembers">4) Define
+the state variables (what the model remembers)</h2>
+<p>Decide what must be carried forward because it influences the future.
+In the pedagogical ASCVD model this includes age, sex, SBP/DBP, BMP
+variables, lipids, antihypertensive count, statin intensity, and lab
+order state.</p>
+<p>Do not overfit state early. If a variable does not influence future
+events, it may belong in a derived layer or an observation table rather
+than state.</p>
+<h2 id="define-blocks-panels-and-treatments">5) Define blocks (panels)
+and treatments</h2>
+<p>Clinicians should define the panels as they are used in practice, not
+as they appear in a dataset. BP, BMP, and lipids are a good starting
+point.</p>
+<p>Treatments should be encoded in a way the team can reason about. In
+this model: number of antihypertensives (0–4+) and statin intensity
+(none/moderate/high). Confirm that these are sufficient for the
+questions you want to ask.</p>
+<h2 id="decide-how-care-is-scheduled">6) Decide how care is
+scheduled</h2>
+<p>Agree on a visit cadence distribution with jitter. Then define the
+no-show logic. Start simple. The important thing is to be explicit about
+whether no-show probability changes with history, burden, or patient
+characteristics.</p>
+<p>Also decide whether labs happen independently or only when ordered.
+For this model, labs are ordered at attended visits. This is often the
+point where clinicians will push back if the model is too
+“calendar-driven.” Keep it encounter-driven.</p>
+<h2 id="define-decision-rules-at-visits-treatments-orders">7) Define
+decision rules at visits (treatments, orders)</h2>
+<p>Write down the decision triggers in words before coding them.</p>
+<p>For hypertension: intensify if SBP &gt; 130 or DBP &gt; 80. Decide
+whether there is inertia (probabilistic escalation) and what caps exist
+(4+).</p>
+<p>For statins: decide which information triggers escalation (LDL, risk
+proxy) and what inertia looks like.</p>
+<p>For lab orders: decide when BMP and lipids are ordered. Often this is
+“if due” based on the last measurement time.</p>
+<h2 id="run-a-few-patient-stories-and-do-face-validity-review">8) Run a
+few patient stories and do face-validity review</h2>
+<p>Before cohort runs, generate a handful of patient trajectories and
+review the timelines together. Ask clinicians to narrate the timeline
+and identify what looks wrong.</p>
+<p>This step is not optional. It is the fastest way to surface broken
+assumptions.</p>
+<h2 id="define-validation-targets-before-calibration">9) Define
+validation targets before calibration</h2>
+<p>Agree on what will be checked against data. Examples:</p>
+<p>Visit frequency distribution, no-show rate and persistence,
+distributions of SBP and LDL at visits, treatment intensification
+frequencies, time-to-event distribution for composite ASCVD events.</p>
+<p>Write these targets down. If they are not written down, validation
+becomes vibes.</p>
+<h2 id="assign-ownership-and-next-actions">10) Assign ownership and next
+actions</h2>
+<p>End every meeting with: who is implementing what, what will be
+reviewed next, and what artifacts will be brought to the next meeting
+(plots, trajectory examples, calibration tables).</p>
+<p>The model improves through iteration, not through single grand
+designs.</p>
+</body>
+</html>

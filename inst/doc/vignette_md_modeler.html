@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>vignette_md_modeler</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="modeling-ascvd-care-trajectories-with-patientsimascvd">Modeling
+ASCVD Care Trajectories with <code>patientSimASCVD</code></h1>
+<h2 id="a-clinician-facing-guide-to-patient-level-simulation">A
+clinician-facing guide to patient-level simulation</h2>
+<p>This vignette is for clinicians and clinician–scientists (MD, MD/PhD)
+collaborating with data scientists to build patient-level simulation
+models of ASCVD care. It explains how clinical logic is translated into
+an event-driven simulation, what assumptions are being made, and how
+clinicians can productively guide those assumptions.</p>
+<p>You do not need to write R code to use this framework well. You do
+need to be willing to say, out loud and specifically, what “care” looks
+like over time for the patients you care about, and where the model is
+allowed to be crude versus where it must be faithful.</p>
+<h2 id="what-the-model-is-trying-to-represent">What the model is trying
+to represent</h2>
+<p><code>patientSimASCVD</code> is designed to simulate <em>care
+trajectories</em>, not physiology in isolation. The emphasis is on how
+patients interact with the health system, what gets measured, how
+treatments change in response to those measurements, and how these
+evolving measurements and treatments relate to the risk of major ASCVD
+events.</p>
+<p>That is a different goal than building a static risk score. A risk
+score is typically a snapshot: given values today, estimate risk over a
+horizon. A care-trajectory simulator is a storyline: it needs to
+describe how today becomes tomorrow. That storyline includes missed
+appointments, delayed labs, decision thresholds, treatment inertia, and
+the messy reality that “guidelines” are filtered through clinic
+capacity, patient preferences, and time.</p>
+<p>This package is a pedagogical model. Its statistical “innards” are
+intentionally simple placeholders so that teams can focus on structure,
+assumptions, and collaboration. In later iterations, those placeholders
+can be replaced with ML models without changing the simulation
+architecture.</p>
+<h2 id="why-an-event-driven-model-fits-clinical-reality">Why an
+event-driven model fits clinical reality</h2>
+<p>Clinical care does not unfold in evenly spaced time steps. Patients
+are seen when they are seen. Labs are ordered during encounters, drawn
+later (or never), and results return at irregular times. Medications are
+started or intensified at decision points, not continuously. Acute
+events can occur between routine follow-ups.</p>
+<p>An event-driven simulation mirrors this. Time advances from one
+clinically meaningful event to the next. The patient state changes only
+when an event occurs. Multiple “clocks” can run at once—visit
+scheduling, lab monitoring, and ASCVD risk progression—while still
+sharing one global time axis.</p>
+<p>This typically matches how clinicians think: a patient’s trajectory
+is a series of episodes and decisions, not a grid of days.</p>
+<h2 id="what-the-patient-state-includes">What the patient state
+includes</h2>
+<p>At any point in simulated time, a patient has a state: what the model
+“knows” about them and what will influence what happens next.</p>
+<p>In this ASCVD example, the core state includes age (in years) and
+sex. These are required at patient instantiation. The model is designed
+to fail fast if these are missing, because nearly every downstream
+component depends on them.</p>
+<p>Blood pressure is represented as systolic and diastolic values
+(<code>sbp</code>, <code>dbp</code>) that are updated jointly to
+preserve correlation. Laboratory measurements are organized into
+clinically familiar panels: a basic metabolic panel (BMP) and a lipid
+panel. The lipid panel is especially important because it interacts
+tightly with statin treatment intensity.</p>
+<p>Treatments are represented with deliberately coarse but clinically
+meaningful state variables. Antihypertensive therapy is encoded as the
+number of agents (<code>n_antihypertensives</code>), capped at 4 to
+represent “4+.” Statin therapy is encoded as an ordered category
+(<code>statin_intensity</code>: none, moderate, high). These
+representations are not meant to encode specific drug classes; they are
+meant to capture treatment burden and intensity as drivers of downstream
+measurements and risk.</p>
+<p>Finally, the model includes operational state that matters to care
+delivery: lab orders. For example, <code>bmp_order_time</code> indicates
+that a BMP has been ordered but not yet drawn. This is not a derived
+quantity; it is an operational commitment that should influence future
+events.</p>
+<p>A terminal indicator (<code>ascvd</code>) records whether the patient
+has experienced a composite ASCVD event. Once that event occurs, the
+simulation stops.</p>
+<h2 id="what-is-intentionally-not-stored-as-core-state">What is
+intentionally not stored as core state</h2>
+<p>Some quantities are intentionally derived rather than stored. In this
+model, the number of no-shows is derived from the event history rather
+than stored as a mutable counter. This prevents subtle bookkeeping
+errors (such as resetting counts after a visit) and keeps the model
+honest: if you want to define “no-shows,” you must define what counts as
+a no-show and then derive it consistently.</p>
+<p>Similarly, “BP controlled” flags, risk proxies, and other reporting
+variables are derived. This makes it easier to adjust definitions
+without rewriting history.</p>
+<h2 id="visits-scheduling-noise-and-no-shows">Visits, scheduling noise,
+and no-shows</h2>
+<p>The model schedules clinic visits at irregular intervals (in years),
+with random noise around the cadence. This is a practical compromise: it
+avoids the unrealistic rigidity of fixed-interval follow-up, while still
+permitting tractable modeling.</p>
+<p>At each scheduled visit, the model determines whether the patient
+attends. Attendance is probabilistic and may depend on patient
+characteristics, prior no-show history, and treatment burden. In this
+pedagogical model, no-show logic is explicit and replaceable: teams can
+start simple and later fit a no-show model from data.</p>
+<p>A critical design choice here is that a no-show causes <em>no
+updates</em> to core state. No labs are drawn. No medications are
+adjusted. No new measurements are obtained. The missed visit is recorded
+as an event, but the patient’s state remains unchanged. Clinically, this
+reflects the fact that many downstream consequences of missed care arise
+precisely because nothing happens.</p>
+<h2 id="labs-only-happen-when-ordered-at-attended-visits">Labs only
+happen when ordered at attended visits</h2>
+<p>One of the easiest ways for a simulation to lose clinical credibility
+is to make labs appear on a calendar independent of care. In real
+practice, lab measurement is an action: someone orders it.</p>
+<p>In this model, BMP and lipid panels are only drawn if they have been
+ordered at an attended clinic visit. The ordering decision can be
+rule-based (“BMP annually if due”) or more nuanced. Once ordered, the
+lab draw occurs later as its own event. When the draw occurs, the
+corresponding panel state is updated and the order flag is cleared.</p>
+<p>This ordering–draw sequence aligns with clinical workflows and also
+forces the team to be explicit about what “monitoring” means in their
+setting.</p>
+<h2 id="bp-measurement-and-antihypertensive-intensification">BP
+measurement and antihypertensive intensification</h2>
+<p>At an attended clinic visit, BP is measured and the BP state is
+updated. The model updates SBP and DBP jointly, with measurement noise.
+Antihypertensive burden modifies expected BP: higher treatment intensity
+should, on average, reduce BP.</p>
+<p>The pedagogical treatment decision rule is intentionally current and
+recognizable. Antihypertensive therapy is intensified when SBP exceeds
+130 or DBP exceeds 80. The escalation is ordinal and capped at 4+
+agents. In a realistic model, there is treatment inertia: not every
+visit leads to intensification even when thresholds are exceeded. In
+this pedagogical scaffold, inertia can be represented probabilistically
+and later replaced with an ML decision model.</p>
+<p>Clinically, the important point is that the <em>decision threshold
+and the inertia assumptions are visible</em> and therefore
+discussable.</p>
+<h2 id="lipids-and-statin-intensity">Lipids and statin intensity</h2>
+<p>Lipid levels update only when a lipid panel is drawn. Statin
+intensity is adjusted at attended clinic visits, based on available
+lipid information and a risk proxy. Statin intensity is treated as an
+ordered category: none &lt; moderate &lt; high.</p>
+<p>This abstraction is deliberate. It captures the concept of treatment
+intensity and its downstream effects without forcing early commitment to
+drug classes, doses, or adherence modeling. Those details can be added
+later if needed, but the first-order clinical logic can be represented
+now.</p>
+<h2 id="terminal-composite-ascvd-events">Terminal composite ASCVD
+events</h2>
+<p>ASCVD events are modeled as a terminal process operating on the same
+global timeline. At any moment, the patient has a hazard of experiencing
+a composite event. The hazard depends on patient state (age, BP, lipids,
+treatment intensity) and can be implemented as a simple log-linear model
+initially.</p>
+<p>When an ASCVD event occurs, it is classified as MI, stroke, or
+all-cause death. The event is recorded and the simulation stops
+immediately. This aligns with common composite endpoints used in the
+literature and provides a clear terminal condition for trajectories.</p>
+<h2 id="how-to-interpret-outputs">How to interpret outputs</h2>
+<p>The primary output of this modeling approach is a patient timeline: a
+sequence of events with associated times, state changes, and treatment
+adjustments. Clinically, this is often easier to interpret than a dense
+table of time-indexed values. You can see missed care, delayed
+monitoring, treatment escalation, and eventual outcomes as a
+narrative.</p>
+<p>When you interpret results from this model, remember what it is and
+is not claiming. It encodes assumptions about care processes, patient
+behavior, and how measurements relate to risk. It does not automatically
+provide causal effects. If you want causal claims, those must be
+supported by explicit assumptions and validation work.</p>
+<h2 id="the-clinicians-role-in-model-development">The clinician’s role
+in model development</h2>
+<p>Clinicians contribute most by shaping the model’s clinical structure.
+You can define realistic event types, identify implausible trajectories,
+and clarify what should or should not change at an event.</p>
+<p>When clinicians say things like “we wouldn’t order lipids there,”
+“patients like this often miss follow-up,” or “we rarely go from zero
+meds to triple therapy in one visit,” they are providing information the
+model cannot invent. This is often the difference between a technically
+impressive model and a clinically credible one.</p>
+<h2 id="looking-ahead">Looking ahead</h2>
+<p>This vignette focuses on representation: how care is encoded. The
+natural next layer is validation: calibration to observed distributions,
+dynamic forecasting performance, and sensitivity to assumptions about
+no-shows and treatment inertia. Those tasks are easier when the core
+structure is explicit.</p>
+<p>The intention of <code>patientSimASCVD</code> is to provide a shared
+language for that interdisciplinary work.</p>
+</body>
+</html>
