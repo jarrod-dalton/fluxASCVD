@@ -1,0 +1,7 @@
+---
+title: "Implementing an Event-Driven ASCVD Simulator"
+output: html_vignette
+---
+
+This vignette is written for data scientists implementing ASCVD models
+using patientSimCore. It includes code examples and executable chunks.
