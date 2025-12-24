@@ -3,33 +3,26 @@
 #
 # Build the patientSimASCVD ModelBundle.
 #
-# Notes
-# - Engine standardizes ctx$params:
-#     * if user provides ctx$params, it is used
-#     * else Engine will use bundle$params (below) if provided
-# - init_patient() is called once at the start of Engine$run()
+# init_patient() is called once at the start of Engine$run() and is used to
+# register derived variables (idempotent by name).
 # ------------------------------------------------------------------------------
-
 ascvd_model_bundle <- function(params = list()) {
-  
+
   init_patient <- function(patient, ctx) {
-    # Use ctx$params so derived vars align with any user overrides for this run.
-    patientSimCore::check_derived(
-      patient,
-      derived_vars_ascvd(ctx$params),
-      replace = FALSE
-    )
+    patientSimCore::check_derived(patient, derived_vars_ascvd(params), replace = FALSE)
     invisible(NULL)
   }
-  
+
+  with_params <- function(ctx) {
+    if (is.null(ctx)) ctx <- list()
+    if (is.null(ctx$params)) ctx$params <- params
+    ctx
+  }
+
   list(
-    # Optional defaults for ctx$params (Engine uses these if ctx$params not provided)
-    params         = params,
-    
-    init_patient   = init_patient,
-    propose_events = propose_events_ascvd,
-    transition     = transition_ascvd,
-    stop           = stop_ascvd,
-    observe        = observe_ascvd
+    init_patient  = init_patient,
+    propose_events = function(patient, ctx) propose_events_ascvd(patient, with_params(ctx)),
+    transition     = function(patient, event, ctx) transition_ascvd(patient, event, with_params(ctx)),
+    stop           = function(patient, event, ctx) stop_ascvd(patient, event, with_params(ctx))
   )
 }

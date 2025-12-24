@@ -1,0 +1,121 @@
+---
+title: "Conditioning, follow-up, and at-risk masks"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Conditioning, follow-up, and at-risk masks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This vignette focuses on *conditional* forecasting: summarizing outcomes among runs that meet a definition such as "still under active follow-up" or "event-free through a given time".
+
+## Two core flags: `alive` and `active_followup`
+
+In this ecosystem, we keep two concepts separate:
+
+- `alive`: vital status only (TRUE or FALSE).
+- `active_followup`: whether the patient is still being followed / in scope for the question.
+
+A patient can be discharged (or administratively censored) while still alive: `alive == TRUE` but `active_followup == FALSE`.
+
+These are **state variables**. Model code should update them explicitly inside `transition()`.
+
+## Setup
+
+```{r}
+library(patientSimCore)
+library(patientSimASCVD)
+library(patientSimForecast)
+
+bundle <- patientSimASCVD::bundle_ascvd()
+engine <- patientSimCore::Engine$new(bundle = bundle)
+```
+
+## Conditioning at a start time (`eligible`)
+
+All streaming summaries in patientSimForecast define a *fixed cohort* at a `start_time` (default: the first forecast time). By default, the eligible cohort is:
+
+- defined at `start_time`, and
+- `alive == TRUE` at `start_time`.
+
+You can add additional conditions by supplying an `eligible()` function. This function is evaluated **once** at `start_time`.
+
+```{r}
+p <- patientSimCore::new_patient(
+  schema = patientSimASCVD::ascvd_schema(),
+  state = list(
+    age = 55,
+    sex = "M",
+    sbp = 148,
+    dbp = 92,
+    ldl = 165,
+    hdl = 42,
+    triglycerides = 210,
+    n_antihypertensives = 0,
+    statin_intensity = "none",
+    alive = TRUE,
+    active_followup = TRUE
+  ),
+  time0 = 0
+)
+
+times <- c(1/12, 3/12, 6/12, 1, 2)
+start_time <- 3/12
+
+eligible_active_followup <- function(snap, t, ctx) {
+  isTRUE(snap$active_followup)
+}
+
+rf <- patientSimForecast::forecast(
+  engine = engine,
+  patients = list(p = p),
+  times = times,
+  S = 200,
+  return = "summary_stats",
+  summary_stats = "risk",
+  summary_spec = list(
+    event = c("ascvd_event"),
+    start_time = start_time,
+    eligible = eligible_active_followup
+  )
+)
+rf$result
+```
+
+## Event-free conditioning through the start time
+
+Sometimes you want "risk over the next year among people who have had no event so far".
+
+Use `condition_on_events` to require that a set of event types has **not** occurred by `start_time`.
+
+```{r eval=FALSE}
+rf_event_free <- patientSimForecast::forecast(
+  engine = engine,
+  patients = list(p = p),
+  times = times,
+  S = 200,
+  return = "summary_stats",
+  summary_stats = "risk",
+  summary_spec = list(
+    event = c("ascvd_event"),
+    start_time = start_time,
+    condition_on_events = c("ascvd_event")
+  )
+)
+```
+
+## A note on "at-risk" masks
+
+Many real models need a time-varying "at risk" definition, such as "alive and still on the waitlist" (transplant) or "alive and currently on therapy" (oncology).
+
+In v1, patientSimForecast uses a fixed cohort defined at `start_time`. You can still summarize *state variables* at future times, but the meaning of the denominator matters.
+
+Practical guidance:
+
+- Use `eligible()` to define a clinically meaningful cohort at a clear anchor time.
+- Prefer defining additional phase/status variables in state (or as derived variables), so you can condition on them cleanly.
+- When you need a true time-varying at-risk denominator (re-entry allowed), we can extend the API with an `at_risk()` predicate.

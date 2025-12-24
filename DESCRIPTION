@@ -12,6 +12,10 @@ Depends:
     patientSimCore (>= 0.10.0)
 Imports:
     stats
+Suggests:
+    patientSimForecast,
+    future,
+    future.apply
 License: Proprietary
 Encoding: UTF-8
 LazyData: true
