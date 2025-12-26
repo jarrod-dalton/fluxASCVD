@@ -2,9 +2,12 @@ Package: patientSimASCVD
 Type: Package
 Title: Event-driven ASCVD Care Trajectory Model
 Version: 0.1.0
-Authors@R:
-    person("Jarrod", "Dalton", role = c("aut", "cre"),
-           email = "jarrod@example.com")
+Author: Jarrod Dalton [aut, cre]
+Maintainer: Jarrod Dalton <jarrod.dalton@gmail.com>
+Authors@R: person(given = "Jarrod",
+                  family = "Dalton",
+                  role = c("aut", "cre"),
+                  email = "jarrod.dalton@gmail.com")
 Description:
     A pedagogical patient-level simulation model for ASCVD care,
     implemented using the patientSimCore event-driven simulation scaffold.
