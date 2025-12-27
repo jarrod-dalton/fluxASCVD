@@ -45,6 +45,16 @@ transition_ascvd <- function(patient, event, ctx) {
   }
 
   if (et == "ascvd_event") {
+    # ASCVD event ends active follow-up in this toy model.
+    #
+    # Important semantic: the simulation may stop due to a *non-death* event
+    # (e.g., MI or stroke). In that case, the patient can still be alive, but
+    # state is no longer defined after the stop time.
+    #
+    # If the ASCVD event is a death event, we also set alive = FALSE.
+    if (identical(event$ascvd_type, "death")) {
+      return(list(ascvd = 1, alive = FALSE))
+    }
     return(list(ascvd = 1))
   }
 

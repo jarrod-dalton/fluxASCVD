@@ -2,8 +2,14 @@
 #
 # - Patient input can be a 1-row data.frame (or named list) passed to patientSimCore::new_patient().
 # - Summary statistics are computed over simulation runs treated as draws from the posterior predictive.
-# - State summaries are conditioned at each time on the model-defined "alive" state (and any follow-up
-#   behavior implied by the model's stop logic and snapshot availability).
+# - State summaries are conditioned at each time on the model-defined "alive" state *and* on
+#   whether the model is still in active follow-up at that time.
+#
+# ASCVD note (alive vs follow-up):
+# - The toy ASCVD model stops the simulation at the first `ascvd_event`.
+# - The event can be MI, stroke, or death.
+# - If the event is MI/stroke, the patient remains alive but follow-up ends, so
+#   state is not defined after that time (you should see NAs beyond the stop time).
 
 library(patientSimCore)
 library(patientSimForecast)
@@ -46,7 +52,7 @@ pat <- patientSimCore::new_patient(
 
 # Forecast grid
 # Keep this small for interactive use; e.g., 3-5 times.
-times <- c(0, 1, 5)
+times <- c(0, 1, 5, 10)
 
 # One parameter set (extend to multiple param_sets as needed)
 param_sets <- list(list())
@@ -70,13 +76,34 @@ res <- patientSimForecast::forecast(
   summary_stats = "both",
   summary_spec = list(
     # risk(): compute risk of event types among the eligible cohort defined at start_time
-    event = c("death"),
+    # (denominator is fixed at start_time; not re-conditioned on being alive at each t)
+    event = c("ascvd_event"),
     start_time = 0
   ),
-  vars = c("age", "sex", "sbp", "dbp", "ldl", "hdl", "triglycerides", "ascvd")
+  vars = c("alive", "age", "sex", "sbp", "dbp", "ldl", "hdl", "triglycerides", "ascvd")
 )
 
 # res$risk is a ps_risk object (data.frame-like)
 # res$state is a state summary (data.frame-like)
 print(res$risk)
 print(res$state)
+
+# Optional inspection: see how often state is defined at each time
+# (stop logic can end follow-up due to MI/stroke even when alive remains TRUE at stop time).
+x_obj <- patientSimForecast::forecast(
+  engine = engine,
+  patients = pat,
+  times = times,
+  S = 30,
+  param_sets = param_sets,
+  ctx = ctx,
+  backend = "none",
+  return = "object",
+  vars = c("alive", "ascvd")
+)
+
+cat("Proportion with follow-up defined at each time:\n")
+print(colMeans(x_obj$defined, na.rm = TRUE))
+
+cat("Proportion alive among those with defined follow-up at each time:\n")
+print(colMeans(x_obj$alive, na.rm = TRUE))
