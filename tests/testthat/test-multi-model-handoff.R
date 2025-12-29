@@ -2,7 +2,10 @@ test_that("namespaced patches support multi-scope handoff without touching singl
   skip_if_not_installed("patientSimCore")
 
   schema <- patientSimCore::default_patient_schema()
-  schema$model_active <- patientSimCore::model_active_schema_var(default = c(ascvd = TRUE, hospital = FALSE))
+  schema$model_active <- patientSimCore::model_active_schema_var(
+    scopes = c("ascvd", "hospital"),
+    default = c(ascvd = TRUE, hospital = FALSE)
+  )
 
   schema$ascvd__ldl            <- list(default = 130)
   schema$ascvd__last_hosp_time <- list(default = NA_real_)
