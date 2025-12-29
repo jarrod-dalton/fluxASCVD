@@ -37,7 +37,7 @@ transition_ascvd <- function(patient, event, ctx) {
     # BMP "result" arrives: mark measured and set LDL (example only)
     ldl <- as.numeric(stats::rnorm(1, mean = 120, sd = 25))
     return(list(
-      bmp_measured = t,
+      bmp_measured_time = t,
       ldl = ldl
     ))
   }

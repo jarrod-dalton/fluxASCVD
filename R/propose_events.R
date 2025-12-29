@@ -1,45 +1,60 @@
+# Event proposal helpers for the ASCVD example model.
 
-#' Propose next events for the ASCVD example model
-#'
-#' The core engine expects a list of "event proposals" where each proposal
-#' contains at least:
-#'   - time_next (numeric scalar)
-#'   - event_type (character scalar)
-#'
-#' We keep the example deterministic and simple:
-#'   - A clinic visit is offered every 1 time unit while the ascvd scope is active.
-#'   - If a BMP was ordered, we offer a BMP result event shortly after.
-#'   - An ASCVD event is offered later to demonstrate competing event types.
-#'
-#' @export
 propose_events_ascvd <- function(patient, ctx) {
-  t <- patient$time()
+  list(
+    propose_clinic_visit(patient, ctx),
+    propose_bmp(patient, ctx),
+    propose_ascvd_event(patient, ctx)
+  )
+}
 
-  # If model_active exists, respect it. Otherwise, assume ascvd is active.
-  active <- TRUE
-  if ("core__model_active" %in% names(patient$schema)) {
-    ma <- patient$state("core__model_active")
-    if (is.logical(ma) && !is.null(names(ma)) && "ascvd" %in% names(ma)) {
-      active <- isTRUE(ma[["ascvd"]])
+propose_clinic_visit <- function(patient, ctx) {
+  t <- patient$last_time
+  interval <- ctx$params$clinic_interval
+  if (is.null(interval) || !is.finite(interval) || interval <= 0) interval <- 0.5
+
+  list(
+    process_id = "clinic",
+    time_next = t + interval,
+    event_type = "clinic_visit"
+  )
+}
+
+propose_bmp <- function(patient, ctx) {
+  # A BMP is only proposed if it has been ordered but not yet measured.
+  s <- patient$as_list(c("bmp_order_time", "bmp_measured_time"))
+
+  if (is.na(s$bmp_order_time) || !is.na(s$bmp_measured_time)) {
+    return(list(process_id = "bmp", time_next = Inf, event_type = NA_character_))
+  }
+
+  delay <- ctx$params$bmp_result_delay
+  if (is.null(delay) || !is.finite(delay) || delay <= 0) delay <- 0.05
+
+  list(
+    process_id = "bmp",
+    time_next = s$bmp_order_time + delay,
+    event_type = "bmp"
+  )
+}
+
+propose_ascvd_event <- function(patient, ctx) {
+  # If the model is deactivated via model_active, propose no events.
+  if ("model_active" %in% names(patient$schema)) {
+    ma <- patient$state("model_active")
+    if (is.list(ma) && isFALSE(ma[["ascvd"]])) {
+      return(list(process_id = "ascvd", time_next = Inf, event_type = NA_character_))
     }
   }
-  if (!isTRUE(active)) {
-    return(list())
-  }
 
-  # Always offer a clinic visit at t+1
-  props <- list(list(time_next = t + 1, event_type = "clinic_visit", process_id = "clinic"))
+  t <- patient$last_time
+  hazard <- ctx$params$ascvd_hazard
+  if (is.null(hazard) || !is.finite(hazard) || hazard <= 0) hazard <- 0.01
 
-  # If BMP ordered and not yet measured, offer bmp at order time + 0.1 (or t+0.1 if order time is in past/NA)
-  order_time <- patient$state("bmp_order_time")
-  bmp_measured <- patient$state("bmp_measured")
-  if (!is.na(order_time) && is.na(bmp_measured)) {
-    tt <- max(t + 0.1, order_time + 0.1)
-    props[[length(props) + 1]] <- list(time_next = tt, event_type = "bmp", process_id = "bmp")
-  }
-
-  # Offer a distant ASCVD event (example only)
-  props[[length(props) + 1]] <- list(time_next = t + 2, event_type = "ascvd_event", process_id = "ascvd_event")
-
-  props
+  dt <- stats::rexp(1, rate = hazard)
+  list(
+    process_id = "ascvd",
+    time_next = t + dt,
+    event_type = "ascvd_event"
+  )
 }
