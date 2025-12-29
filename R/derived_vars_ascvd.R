@@ -1,3 +1,4 @@
+
 # ------------------------------------------------------------------------------
 # derived_vars_ascvd(params = list())
 #
@@ -11,10 +12,11 @@
 derived_vars_ascvd <- function(params = list()) {
 
   bp_controlled <- function(patient, j, t) {
-    sbp <- patient$state("sbp")
-    dbp <- patient$state("dbp")
-    if (is.null(sbp) || is.null(dbp) || any(is.na(c(sbp, dbp)))) return(NA)
-    isTRUE(sbp <= 130 && dbp <= 80)
+    sbp <- as.numeric(patient$state("sbp"))
+    dbp <- as.numeric(patient$state("dbp"))
+    if (anyNA(c(sbp, dbp))) return(NA)
+    # Example threshold only
+    isTRUE(sbp < 140 && dbp < 90)
   }
 
   n_no_show <- function(patient, j, t) {
