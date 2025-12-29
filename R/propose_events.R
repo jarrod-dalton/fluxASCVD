@@ -2,7 +2,10 @@ propose_events_ascvd <- function(patient, ctx) {
   events <- list()
 
   # Clinic visit proposal
-  t_next <- patient$time + stats::rgamma(1, shape = 4, rate = 12)
+  # patientSimCore's canonical time accessor is patient$last_time
+  # (patient$time is not part of the public contract).
+  t0 <- patient$last_time
+  t_next <- t0 + stats::rgamma(1, shape = 4, rate = 12)
   events$clinic <- list(
     time_next = t_next,
     event_type = "clinic_visit",
@@ -31,7 +34,7 @@ propose_events_ascvd <- function(patient, ctx) {
 
   # Terminal ASCVD event
   lambda <- 0.02
-  t_ascvd <- patient$time + stats::rexp(1, rate = lambda)
+  t_ascvd <- t0 + stats::rexp(1, rate = lambda)
   events$ascvd <- list(
     time_next = t_ascvd,
     event_type = "ascvd_event",
