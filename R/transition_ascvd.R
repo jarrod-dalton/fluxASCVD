@@ -8,13 +8,17 @@ transition_ascvd <- function(patient, event, ctx) {
     updates <- list()
 
     # BP update
-    sbp <- patient$state("sbp") + stats::rnorm(1, -5, 10)
-    dbp <- patient$state("dbp") + stats::rnorm(1, -3, 5)
+    # NOTE: patient$state() returns a ps_state object (list-like). Extract the
+    # scalar value before arithmetic.
+    sbp0 <- patient$state("sbp")$sbp
+    dbp0 <- patient$state("dbp")$dbp
+    sbp <- sbp0 + stats::rnorm(1, -5, 10)
+    dbp <- dbp0 + stats::rnorm(1, -3, 5)
     updates <- c(updates, list(sbp = sbp, dbp = dbp))
 
     # HTN intensification
     if (sbp > 130 || dbp > 80) {
-      n <- patient$state("n_antihypertensives")
+      n <- patient$state("n_antihypertensives")$n_antihpertensives
       updates$n_antihypertensives <- min(n + 1, 4)
     }
 
