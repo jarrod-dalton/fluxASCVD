@@ -1,8 +1,12 @@
 propose_events_ascvd <- function(patient, ctx) {
   events <- list()
 
+  # patientSimCore::Patient exposes the current simulation time as `last_time`.
+  # (There is no public `$time` field.)
+  t_now <- patient$last_time
+
   # Clinic visit proposal
-  t_next <- patient$time + stats::rgamma(1, shape = 4, rate = 12)
+  t_next <- t_now + stats::rgamma(1, shape = 4, rate = 12)
   events$clinic <- list(
     time_next = t_next,
     event_type = "clinic_visit",
@@ -31,7 +35,7 @@ propose_events_ascvd <- function(patient, ctx) {
 
   # Terminal ASCVD event
   lambda <- 0.02
-  t_ascvd <- patient$time + stats::rexp(1, rate = lambda)
+  t_ascvd <- t_now + stats::rexp(1, rate = lambda)
   events$ascvd <- list(
     time_next = t_ascvd,
     event_type = "ascvd_event",
