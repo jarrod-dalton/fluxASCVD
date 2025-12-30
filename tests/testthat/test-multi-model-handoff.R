@@ -20,13 +20,13 @@ schema$add("ascvd__ldl", patientSimCore::schema_var("numeric", default = 130, de
 schema$add("ascvd__last_hosp_time", patientSimCore::schema_var("numeric", default = NA_real_, desc = "Time of last hospitalization"))
 
 schema$add("hospital__admitted", patientSimCore::schema_var("logical", default = FALSE, desc = "Currently admitted to hospital"))
+schema$add("hospital__discharged", patientSimCore::schema_var("logical", default = FALSE, desc = "Discharged from hospital"))
 schema$add("hospital__ldl_measured", patientSimCore::schema_var("numeric", default = NA_real_, desc = "LDL measured during hospitalization"))
 
-p <- patientSimCore::new_patient
-(
-    init = list(age = 60, sex = "M"),
-    schema = schema
-  )
+p <- patientSimCore::new_patient(
+  init = list(age = 60, sex = "M"),
+  schema = schema
+)
 
   # A tiny "hospitalization" process that toggles hospital on/off and hands off
   # LDL from hospital -> ascvd on discharge.
@@ -94,7 +94,7 @@ p <- patientSimCore::new_patient
     model_spec = list(name = "hospital")
   )
 
-  out <- eng$run(p, max_time = 2.0)
+  out <- eng$run(p, max_time = 2.0, ctx = list(time_unit = "years"))
   patient <- out$patient
 
   s0 <- patient$snapshot_at_time(0.0)
