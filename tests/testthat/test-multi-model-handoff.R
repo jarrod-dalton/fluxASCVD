@@ -4,19 +4,26 @@ test_that("namespaced patches support multi-scope handoff without touching singl
   # Extend the core default schema with a multi-scope model_active and a few
   # model-specific (namespaced) variables.
   schema <- patientSimCore::default_patient_schema()
-  schema$model_active <- patientSimCore::model_active_schema_var(
-    scopes = c("ascvd", "hospital"),
-    default = c(ascvd = TRUE, hospital = FALSE)
+
+# Add a cross-model bookkeeping variable. This lives at the "core" scope, so
+# namespaced patches like list(core = list(model_active = ...)) can update it.
+schema$add(
+  "model_active",
+  patientSimCore::model_active_schema_var(
+    default = c(ascvd = TRUE, hospital = FALSE),
+    desc = "Which sub-models are active for this patient"
   )
+)
 
-  schema$ascvd__ldl            <- list(default = 130)
-  schema$ascvd__last_hosp_time <- list(default = NA_real_)
+# Model-specific state (namespaced using the __ convention).
+schema$add("ascvd__ldl", patientSimCore::schema_var("numeric", default = 130, desc = "LDL cholesterol (mg/dL)"))
+schema$add("ascvd__last_hosp_time", patientSimCore::schema_var("numeric", default = NA_real_, desc = "Time of last hospitalization"))
 
-  schema$hospital__admitted     <- list(default = FALSE)
-  schema$hospital__ldl_measured <- list(default = NA_real_)
-  schema$hospital__discharged   <- list(default = FALSE)
+schema$add("hospital__admitted", patientSimCore::schema_var("logical", default = FALSE, desc = "Currently admitted to hospital"))
+schema$add("hospital__ldl_measured", patientSimCore::schema_var("numeric", default = NA_real_, desc = "LDL measured during hospitalization"))
 
-  p <- patientSimCore::new_patient(
+p <- patientSimCore::new_patient
+(
     init = list(age = 60, sex = "M"),
     schema = schema
   )

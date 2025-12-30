@@ -1,6 +1,20 @@
 schema_ascvd <- function(scopes = c("ascvd", "hospital"),
                          model_active_default = c(ascvd = TRUE, hospital = FALSE)) {
 
+# Educational schema builder for the ASCVD example model.
+#
+# Key idea: patientSimCore stores patient state as a named list of "schema vars".
+# Each schema var declares:
+#   - type (numeric/int/logical/character/list)
+#   - default value
+#   - description (used for documentation / introspection)
+#
+# This package demonstrates how a model package can:
+#   1) start from the core default schema (demographics + time)
+#   2) add model-specific state (e.g., SBP, LDL)
+#   3) optionally add cross-model bookkeeping (model_active) to support handoffs.
+
+
   base <- patientSimCore::default_patient_schema()
 
   extra <- list(
@@ -8,7 +22,7 @@ schema_ascvd <- function(scopes = c("ascvd", "hospital"),
     # special-cased by patientSimCore::flatten_namespaced_patches() so
     # list(core = list(model_active = ...)) updates this variable.
     model_active = patientSimCore::model_active_schema_var(
-      default = as.list(model_active_default),
+      default = model_active_default,
       desc = "Which models are active for this patient"
     ),
 
