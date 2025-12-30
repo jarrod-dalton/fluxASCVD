@@ -36,14 +36,14 @@ test_that("ASCVD smoke: forecast summary_stats runs and returns expected shapes"
     engine = engine,
     patients = pat,
     times = c(0, 1, 3, 5),
-	  vars = c("sbp", "dbp"),
     S = 10,
     param_sets = list(list()),
     ctx = list(time_unit = "years"),
     backend = "none",
     return = "summary_stats",
     summary_stats = "both",
-	  summary_spec = list(event = c("ascvd_event"), start_time = 0)
+    summary_spec = list(event = c("ascvd_event"), start_time = 0),
+    state_spec = list(vars = c("sbp", "dbp"))
   )
 
   expect_true(is.list(fx))
