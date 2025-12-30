@@ -7,8 +7,11 @@
 # that remain downstream of canonical state updates.
 
 ascvd_derived_vars <- function(schema = ascvd_schema()) {
-  # Start with any derived vars the core schema already defines.
-  derived <- patientSimCore::default_derived_vars(schema = schema)
+  # NOTE: In this framework, derived variables are a *model concern*.
+  # The core schema deliberately does not ship a universal set of
+  # "default" derived variables, because what is considered derived is
+  # model-specific. So we start from an empty set.
+  derived <- list()
 
   # Pulse pressure (SBP - DBP) as a trivial example.
   derived$pp <- function(state) {
