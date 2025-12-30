@@ -83,7 +83,7 @@ rf <- patientSimForecast::forecast(
   S = 2000,
   return = "summary_stats",
   summary_stats = "risk",
-  summary_spec = list(event = c("ascvd_event")),
+  summary_spec = list(event = c("mi")),
   backend = "future",
   seed = 1
 )
@@ -134,7 +134,7 @@ rf <- patientSimForecast::forecast(
   S = 2000,
   return = "summary_stats",
   summary_stats = "risk",
-  summary_spec = list(event = c("ascvd_event")),
+  summary_spec = list(event = c("mi")),
   backend = "future",
   seed = 1
 )

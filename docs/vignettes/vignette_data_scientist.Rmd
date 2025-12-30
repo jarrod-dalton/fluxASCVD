@@ -160,7 +160,7 @@ propose_events_ascvd <- function(patient, ctx) {
   t_ascvd <- patient$time + stats::rexp(1, rate = lambda)
   events$ascvd <- list(
     time_next = t_ascvd,
-    event_type = "ascvd_event",
+    event_type = "mi",
     process_id = "ascvd",
     ascvd_type = sample(c("mi", "stroke", "death"), 1)
   )
@@ -236,7 +236,7 @@ transition_ascvd <- function(patient, event, ctx) {
     ))
   }
 
-  if (et == "ascvd_event") {
+  if (et == "mi") {
     return(list(ascvd = 1))
   }
 
@@ -279,7 +279,7 @@ Here is the stop function:
 
 ```r
 stop_ascvd <- function(patient, event, ctx) {
-  if (event$event_type == "ascvd_event") return(TRUE)
+  if (event$event_type == "mi") return(TRUE)
   FALSE
 }
 ```

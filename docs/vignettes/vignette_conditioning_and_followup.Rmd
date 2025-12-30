@@ -78,7 +78,7 @@ rf <- patientSimForecast::forecast(
   return = "summary_stats",
   summary_stats = "risk",
   summary_spec = list(
-    event = c("ascvd_event"),
+    event = c("mi"),
     start_time = start_time,
     eligible = eligible_active_followup
   )
@@ -101,9 +101,9 @@ rf_event_free <- patientSimForecast::forecast(
   return = "summary_stats",
   summary_stats = "risk",
   summary_spec = list(
-    event = c("ascvd_event"),
+    event = c("mi"),
     start_time = start_time,
-    condition_on_events = c("ascvd_event")
+    condition_on_events = c("mi")
   )
 )
 ```

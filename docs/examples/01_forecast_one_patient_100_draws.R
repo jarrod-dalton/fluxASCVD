@@ -6,7 +6,7 @@
 #   whether the model is still in active follow-up at that time.
 #
 # ASCVD note (alive vs follow-up):
-# - The toy ASCVD model stops the simulation at the first `ascvd_event`.
+# - The toy ASCVD model stops the simulation at the first `mi`.
 # - The event can be MI, stroke, or death.
 # - If the event is MI/stroke, the patient remains alive but follow-up ends, so
 #   state is not defined after that time (you should see NAs beyond the stop time).
@@ -77,7 +77,7 @@ res <- patientSimForecast::forecast(
   summary_spec = list(
     # risk(): compute risk of event types among the eligible cohort defined at start_time
     # (denominator is fixed at start_time; not re-conditioned on being alive at each t)
-    event = c("ascvd_event"),
+    event = c("mi"),
     start_time = 0
   ),
   vars = c("alive", "age", "sex", "sbp", "dbp", "ldl", "hdl", "triglycerides", "ascvd")
