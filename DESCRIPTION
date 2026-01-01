@@ -1,7 +1,7 @@
 Package: patientSimASCVD
 Type: Package
 Title: Event-driven ASCVD Care Trajectory Model
-Version: 1.0.0
+Version: 1.0.1
 Author: Jarrod Dalton [aut, cre]
 Maintainer: Jarrod Dalton <jarrod.dalton@gmail.com>
 Authors@R: person(given = "Jarrod",
