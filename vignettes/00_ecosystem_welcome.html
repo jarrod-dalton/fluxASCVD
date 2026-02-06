@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>patientSim: an ecosystem for process-explicit, patient-level simulation</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">patientSim: an ecosystem for
+process-explicit, patient-level simulation</h1>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#what-problem-is-this-ecosystem-trying-to-solve" id="toc-what-problem-is-this-ecosystem-trying-to-solve">What problem is
+this ecosystem trying to solve?</a></li>
+<li><a href="#multiple-event-processes-one-patient" id="toc-multiple-event-processes-one-patient">Multiple event processes,
+one patient</a></li>
+<li><a href="#ecosystem-components" id="toc-ecosystem-components">Ecosystem Components</a></li>
+<li><a href="#example-model-cardiovascular-disease" id="toc-example-model-cardiovascular-disease">Example Model:
+Cardiovascular Disease</a></li>
+<li><a href="#what-you-should-take-away" id="toc-what-you-should-take-away">What you should take away</a></li>
+<li><a href="#where-we-go-next" id="toc-where-we-go-next">Where we go
+next</a></li>
+</ul>
+</div>
+
+<div id="what-problem-is-this-ecosystem-trying-to-solve" class="section level2">
+<h2>What problem is this ecosystem trying to solve?</h2>
+<p>Electronic health records (EHRs) are not a clean spreadsheet with a
+tidy baseline and a neat follow-up schedule. They are a <strong>tangled
+timeline</strong>: labs on irregular days, office visits whenever
+someone shows up, and clinical events that can pre-empt everything.</p>
+<p>If you model EHR data as if it lived on a single clock, you usually
+end up choosing one of two compromises:</p>
+<ul>
+<li><strong>Over-discretize</strong> time (fixed cycles, forced
+regularity), or</li>
+<li><strong>Over-simplify</strong> processes (one outcome at a time, one
+“time-to-event” lens)</li>
+</ul>
+<p>The <em>patientSim</em> ecosystem exists to make a different
+compromise:</p>
+<blockquote>
+<p>Be explicit about <strong>multiple event processes</strong> unfolding
+within a patient, each with its own tempo, and let you view the
+<em>same</em> raw data through multiple <strong>lenses</strong> that
+match the modeling task.</p>
+</blockquote>
+<p>A second, equally important choice: <em>patientSim</em> is
+<strong>model-first</strong>. You define the key components of your
+model <strong>before</strong> you look at any specific dataset, so teams
+can focus on mechanisms and co-evolution over time, rather than isolated
+relationships among observed indicators.</p>
+<div id="a-quick-contrast" class="section level3">
+<h3>A quick contrast</h3>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Orientation</th>
+<th>Typical first question</th>
+<th>Typical pitfall</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Data-first</td>
+<td>“What associations are in this dataset?”</td>
+<td>The dataset defines the model, implicitly</td>
+</tr>
+<tr class="even">
+<td>Model-first (patientSim)</td>
+<td>“What processes must exist to generate these data?”</td>
+<td>Over-specifying too early; mitigate by iterating from toy → fitted
+components</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="multiple-event-processes-one-patient" class="section level2">
+<h2>Multiple event processes, one patient</h2>
+<p>Here’s a simple mental model we’ll reuse throughout the
+vignettes.</p>
+<ul>
+<li><strong>Labs</strong>: irregular and often frequent (a
+<em>faster</em> event process)</li>
+<li><strong>Office visits</strong>: irregular but less frequent (a
+<em>medium</em> event process)</li>
+<li><strong>Clinical events</strong>: hospitalizations, MI, stroke,
+death (a <em>slower</em> event process)</li>
+</ul>
+<p><img role="img" src="data:image/png;base64,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xRVXmE022aSkv5dfftllf8EFF4TLl7s9lp99gYsuuij0nzlzZqMz/Oqrr8xvv/0Wrv/DDz+E+d5yyy3hdJ4g4AWeffZZM/fcc5vjjjvOTSp0zhSapoWTOm99WUp51PtjxIgRpSza6GWa8n205557mhYtWpgPP/yw0eVnxewKNM/urrFnWRD49NNPzeDBg0valcMOO8wtN3LkyJLXKSljFipLIOofBEFZ62rhKVOmmPPPP99ceuml5oMPPjALLLCAy+OPP/4Ij+v6669fdr6skG0BnWunnHKKmT59ujn44IOLnjPFzqPZPW/L1X3jjTfM0UcfbVZYYQXz73//u9zVZ7l8LbyPDjroIHPPPfeYM8880zz44IOzLDML1JcAAWh9He/U7W3Pnj3NHHP8r6L+rbfeMu+8847bj+22284sscQS4T4tt9xy4XOeNJ3A6quvbn799VdXgGbNmpVdkEsuucSce+65Ddabb775jI650oorrthgPhPqW+CBBx4w7733ntlwww3NSiut5DBq+ZzxX6IUgFYi1cL7SHevOnfubB5++GF3bNZYY41K7Cp5plSAADSlB65eir377rsb/fl0xhlnhAGoag823XRTPyv2ccKECebPP/807dq1i11OM7/99lvTsWPHBstNnDjR3RKOBr0NFvrvhHKWLZTHX3/9Zb755hsXYM8555yFFgmnadmvv/7aLLnkkmZWy4Yr5T1R7dGYMWOcjz60ZyfpuOivWNJt9e+//960adPGLLzwwjlfMIqto+mLLLKIefTRR+MWcfO0L/Jo3769ux1bbIUZM2a4Y73UUkuZxgTK0Xx1DHTe6BiUklexc6zcY6lAX+vIJi6Vej7K5LvvvnN5LrbYYibuXCjnOFZi+9H9lcHpp5/uJu26667hrFLPmXCFhJ6U4zirTcpZX8JbtWqVs+ikSZPMuHHjzFxzzWV0rOadd96c+cVeJGkyq+uG3gu77LKLu6Oh4/PEE08UKxbT61HAnkAkBFIjYC9iuqfr/p5//vmC5d53333DZewt/GCdddYJ7IXQTbPfxoPXXnstXM/eBgtatmzp/h5//PGgS5cubjkbZAa//PKLW07LrLLKKmEeCy64YHDMMccE9lZemI9/Us6yfp3oo22vFWy55ZbBPPPM48phg7Rg5513Dh566KHoYu75U0895Za1H0xuWa2z2WabBdrn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AI33YS4CCCCAAAIIIIBAwgIEoAmDkh0CCCCAAAIIIIBAvAABaLwPcxFAAAEEEEAAAQQSFiAATRiU7BBAAAEEEEAAAQTiBQhA433qeu7ZZ59tmjVrZqZPnz5bDq1atTKXXnrpbOXByggggAACCCCQHQEC0OwcS/YEAQQQQAABBBBIhQABaCoOE4VEAAEEEEAAAQSyI0AAmp1j2SR78ueff5pTTjnFrLrqqqZly5amS5cu5thjjzW///57TnkmT55s9tlnH9O2bVu37I033pgzf+jQoaZnz55Gt+uXXnppc8ABB5jx48fnLMMLBBBAAAEEEMiGAAFoNo5jk+3FvvvuaxRM7rXXXua2224zG264obniiivMRRddlFOmc88910yZMsXccsstZrPNNjMHH3ywuemmm9wymr711lub+eabz+V1/PHHm6efftrlmZMJLxBAAAEEEEAgEwLNM7EX7ESTCKiW86OPPjL9+vUzhx9+uCvDLrvsYt59913zxhtv5JRpkUUWMQ8++KDr1LTddtuZH374wfTv398ceOCBLo+ff/7ZnH/++Wa11VZz67Vv3968+uqrJggCt05OZrxAAAEEEEAAgVQLEICm+vA1beFVY/nBBx+4QihQHD16tHn//ffNzJkzXW1ntHSq9VSPep8UqN51111m3LhxZqWVVnK1n7vuuqvp27evUYCq+fojIYAAAggggED2BLgFn71jWtU9UtvNv/3tb67t5jLLLGNOPvlk13ZTAWk0bbTRRtGXZrHFFnOvv/32WzP//PObZ555xswzzzzmxBNPNMsvv7xZZZVV3LSclXiBAAIIIIAAApkQIADNxGFsmp34/vvvzRZbbGEmTZrk2m6OHTvWfPrpp2b11VdvUKAZM2bkTPMdjHwgusEGG5gPP/zQjBw50rUfVeembbbZxowZMyZnPV4ggAACCCCAQPoFuAWf/mPYZHvw8ssvmwkTJrjgU7fRlXT7Xe1CF1544ZxyqaZUt9d90rpt2rQxiy++uBkyZIhrD3rHHXeYFVZYwf1tsskmZs011zTDhg0zSy21lF+tqo8TJ050HaUUGC+xxBLm73//u1lyySWrWoam2Njzzz9vHn30UfPXX3+ZrbbayvTu3bspipH6bQ4aNMg89dRTZs455zTbb7+963yX+p1qxA6ofbc6Ko4aNcroLslBBx1kFl100UbkxCpZ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ec/fe+89s+GGG5r555/fLL300qZt27Zmhx12MA8//HCDPO644w6zwAILmOWWW86cdtpp5uuvvzadOnUySy65pFl99dXNc889Z5o1a2a+/PLLButWa8IhhxxiunfvXvLm2rRpYy688MJw+SFDhpjXXnstfM0TBBBAAAEEEChPgAC0PK+6W/rOO+80PXr0cLWe99xzjxk5cqS5+uqrTRAEZpdddjEPPfRQjkn//v3Nmmuu6ZY766yzzPXXX2/Gjh1rXnnlFfPOO++YxRdf3BxwwAGmVatWOetV88X6669vtttuu5I3uddee5lVVlnFLT9jxgyz3nrrmc8//7zk9VkQAQQQQAABBHIFmue+5BUC/xOYMGGCOeaYY8zWW2/tAs055vjP95UVVljB9OnTx+y6667uUcHl2muv7Vb84YcfzH777We0jNKPP/5oVl55ZVeDqtcKQG+++WY9bbKk8pWTFHD7pMBbfyQEEEAAAQQQaLwANaCNt8v8mgq8FIReeumlxgeffqd1G/322283c889t1HN6KhRo1zN5+TJk83AgQPd8969e7vb9J999pl7/eCDD5q33nrLPf/uu+98VuaGG24wG2+8sVlkkUXMPvvsY15++eVwnp4oYF1jjTVcrakC3UGDBuXMj74YPHiwy3/MmDHRya6MqvmcNm2aOffcc912/AJDhw41PXv2dPmriYFqaMePH+9nm169epnbbrvN/P777642WDP69evnAm09n9X6WoaEAAIIIIAAAv8TIAD9nwXP8gRGjBjh2m4uu+yyeXP+83K++eYzq666qru1vvDCC5sjjzzSBaQK9PRcweRKK61kFl10Ufe6a9euZuLEiebdd991gaByufXWW83hhx9uNthgA3e7XvN1e/yXX35xG1HwqzabXbp0cUHguuuua7bffvuC7U+1ggLUTz75xNx///1uff9PQa7KMc888xgFpx9//LGbNWXKFFfDq3258cYbzfHHH2+efvppo9vuPr3//vuuA5WCbZVVadNNN3U1wKWs7/PhEQEEEEAAAQT+K2BvJ5IaIWDbRQZvvPFGI9ZMzyq201BgayZjC3zYYYcFtnNSYHvIu+Vat24dXHzxxeE6Bx10UGCDwvD1s88+q/vXge0lH9je8sG8884bnHzyyeH8qVOnBksssYTLw9a+BrZDU2BvmYfz9cTe+g86d+6cMy36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IIAAAgggkBoBAtDUHCoKigACCCCAAAIIZEOAADQbx5G9QAABBBBAAAEEUiNAAJqaQ0VBEUAAAQQQQACBbAgQgGbjOLIXCCCAAAIIIIBAagQIQFNzqCgoAggggAACCCCQDQEC0GwcR/YCAQQQQAABBBBIjQABaGoOFQVFAAEEEEAAAQSyIUAAmo3jyF4ggAACCCCAAAKpESAATc2hoqAIIIAAAggggEA2BAhAs3Ec2QsEEEAAAQQQQCA1AgSgqTlUFBQBBBBAAAEEEMiGAAFoNo4je4EAAggggAACCKRGgAA0NYeKgiKAAAIIIIAAAtkQIADNxnFkLxBAAAEEEEAAgdQIEICm5lBRUAQQQAABBBBAIBsCBKDZOI7sBQIIIIAAAgggkBoBAtDUHCoKigACCCBQTwKjRo0yzZo1c39PPPFEwV2/5ppr3PwePXqE888880w3LQiCcBpPEKg1AQLQWjsiNV6eMWPGmClTptR4KSkeAgggkB2BOeec0zz88MMFd+iBBx4oOJ2JCNS6AAForR+hGijfyy+/bHbaaSezyCKLmE6dOpn555/frL/++uatt94KS/foo4+6b9zff/+9m3bIIYeY7t27h/Nn9eS5555z63/55ZezWrTk+XvvvbfZcMMNS16+KRf8+eefza233tqURWDbCCBQowIbbbSR0TX2r7/+yinhjz/+aF599dWyrrU5GfACgSYUIABtQvw0bPq1114zW2+9tfn999/N+eefbz744ANz3XXXmalTp7qgdMKECQV3QwHqdtttV3BeoYmLL764OeCAA0yrVq0Kzc78tL59+5r77rsv8/vJDiKAQPkCO+64o/nll1+MrsfR9Mgjj7jgc6mllopO5jkCqRBonopSUsgmERg9erTZZpttzFprrWWefPJJM8cc//m+0rVrV/O3v/3NrLTSSuYf//iHuemmmxqUb7/99mswLW6C8rr55pvjFsn0vJkzZ7oa4EzvJDuHAAKNElhiiSXcdfihhx4yPXv2DPPQ7fdddtnFDBkyJJzGEwTSIkANaFqOVBOU88UXXzQTJ040t912Wxh8+mLoG/edd97pAlQ/Lfp47rnnmn322SecpIvms88+a4466iiji6n+TjjhBDN9+nS3jG7nr7nmmua7774L13nnnXfM7rvvbhZddFHTq1cvM3DgQKNAzSd9+99ggw3MQgstZNq3b+9qaj/55BM/u6THDz/80GyxxRYuj86dO5tTTz01LNNpp51m9txzzwb5HHjggebkk08OpytwXmONNVzt7dprr20GDRoUztOTWe370UcfbV566SVXuyGDcePGOXfVCC+22GKubNr/aJOHnA3wAgEEMi+w8847G13zfFKN6ODBg42mkxBIowABaBqPWpXKrABQgV2x2zs77LCDuw1fqDjqrPTxxx+Hs95//32jwO29995zQd5WW21lLr30UnPFFVe4ZRTovvvuu2batGnutWpfdet/0qRJ7pa/2nIec8wx5p577nHzH3zwQaPbUqqNveGGG4zanCrvci7GClYVMOpCfskll5jjjz/ebWv//fd321h99dXd9rQvPqnNlQLybt26uUnaB227S5cubvq6665rtt9++5wOA7Pa9969e5tlllnGta898sgjXSCrQP2FF14wp59+ugu8tTEFsiorCQEE6k9A7fC//vpro+uyktqErrrqqu7aUX8a7HEWBLgFn4WjWKF90IVOgVVSSTWZasOkYUWURowYYZ555hlXE5q/DdU+tmnTxjz++OOu9lXBroI/DTnSp08f88orrxgFsddee61bVYHnPPPMY7Se2qUuuOCC+Vk2eK3gbt555zWvv/66adGihZuvjla77rqrOfHEE822225rFlhgAXP//feHZVTgq3UUZP7222/mnHPOMers5DsQ6UNCNZj//Oc/XYDsNxq375tvvrkZMGCA+fPPP40PftXxSzXIRxxxhMtCAfgpp5xi1Mmrbdu2PlseEUCgTgSWW245s8oqq7gvt7pT4m+/18nus5sZFKAGNIMHNaldUqClzkdJJd1G9sGn8tQtb9V8FkqqNVQw59udahndglewqKSaU7VLVVKtoAJSjZmnVGqZFeSpd+lHH33kal9VA9uuXTu3zTfeeMMFpQpsFYD6dO+997rAcr755jMqo4JQtZHVuv5P7VlVFvVs96mcfdc6GkHgsssuM8cdd5y7Pa9yqeZ15ZVX9lnyiAACNSSgL9TRJkLFiqYvmrrmNCbpeqThmHTd0R0Stf8kIZBWAQLQtB65KpRbt5k//fTTolvS7fE//vij6Pz8GapdjCbVOha6YGvaZ5995m7/R5ePBq+q5Tz88MNNhw4dzMILL+yCQgWESqUMvqwg9aeffnJtqlSb4P90m1vb97fdVbv59ttvGzUJ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pZm9tfWzgm3btjWtWrWavYxqYO0s/RIK7/8aOKGKFIH3fxGYJp7M+7+JD0ACmycATQCRLBBAAAEEEEAAAQRKF+AWfOlWLIkAAggggAACCCCQgAABaAKIZIEAAggggAACCCBQugABaOlWLIkAAggggAACCCCQgAABaAKIZIEAAggggAACCCBQugABaOlWLIkAAggggAACCCCQgAABaAKIZIEAAggggAACCCBQugABaOlWLIkAAggggAACCCCQgAABaAKIZIEAAggggAACCCBQugABaOlWLIkAAggggAACCCCQgAABaAKIZIEAAggggAACCCBQugABaOlWFV8yCIKKb6NaG/jrr7/Mn3/+Wa3NVXQ7M2fOrGj+1cw8S+dYNd3YVnkCnGfleVVraa5l1ZKe9XamTp0au1A9vIcIQGNPgcrPnDx5svnnP/9pOnfubBZaaCGz0047mV9++aXyG67gFnSR6927tznkkEMquJXKZj1lyhTzj3/8w3To0ME0b97cLLXUUubcc881M2bMqOyGK5T7008/bXbddVfTqlUrs/LKK5t//etfFdpSdbM9+uijzaKLLlrdjSa4tQcffNCssMIKDf40PW1J7/uzzjrLLLvssu4822OPPcxLL72Utt0w77zzjunSpUvRv1GjRqVun5599lmz2mqrmXnmmccsssgi5phjjjG6xqUxPfroo6Zr165uX9Zdd11z1VVXpW43brrpJrPwwgsXLPdtt91mNt54YzPffPOZtdde2wwePLjgclmY2DwLO5HmfTj11FPNU089Za677joz99xzm6OOOspsuummZtiwYaZZs2ap27Vp06a5fdA+7bfffqkrvy/wYYcdZh5//HFz0kknmU022cQMGjTIfbj+8ccf5pxzzvGLpeLx66+/NjvssIP5+9//7i5mr732mvvSo1rqE044IRX7UKiQCm6uvvpq94FaaH4apr3xxhvm999/d8cmWt5lllkm+jIVz/VlQB+e11xzjQtCL7vsMrPzzjubMWPGmPnnnz8V+6BCKkDr06dPg/LecMMNZo455jDt2rVrMK+WJ4wcOdJst912ZquttnLH5oMPPnDvfwWgN954Yy0XvUHZnnvuOXct23zzzd2X6OHDh5uzzz7bzDXXXObQQw9tsHwtTnjooYfM4Ycfbuacc84GxXvllVdcxY0qCK644gpz/fXXm6233toMGTLEdOvWrcHyqZ9gq3lJTSRg3zyBvaAFjzzySFgCe7HQffjABnDhtLQ8sTUHwYorrhgsuOCCgb1IBzYATUvRc8o5YcIEd1xOPPHEnOn2w9TtV87EFLw46KCDAlsrFdiAMyytrWkP7AUtfJ22J5MmTQqWXnrpwNbmpvKYeO/NNtss2H///f3L1D5+//33ga1dC2655ZZwH2xg7c47G5SG09L6xN5BCOydkMAGAqnbhfPOO88dm59//jks+5FHHhm0bNky55oQzqzhJxtssEFgaw4DeycqLOWFF14Y2AA0GDt2bDitFp/oc8V+sXGf78svv3ww77zzNiimPj/32muvnOm2tjewlQc507LyglvwTfgV4oUXXnC1nvpm6pNux+n2z5NPPuknpeZR36YXX3xx895775k01uB4aNUMDhw40KgWNJpswGNs4GPS1o5Kt6j0zVq1Nz798MMPrtbAv07bo2qmV1ppJbPbbrulreg55VUNzuqrr+6m2Q+VnHlpenHfffe5Ws7oXQ/7AWs+//xzs++++6ZpVxqUVTWFql3T3zrrrNNgfq1PaNu2rZk+fbqrafdlVVMi1Uqn7S7bhx9+6JqpRWsPdXdH+/fyyy/73avJR30u6u7Tww8/bPr27dvA/ttvvzWqrd5xxx1zyr/99tunMh7I2YkiL/73iVRkASZXTkBtiXS7R7feo0ntDhUgpC2p/ZdukShQS3NSW1y1X43uh4LOe+65x7XJiQZyadjPFi1auLasKutXX33l2rLq1u8RRxyRhuI3KKO+uN11113m2muvbTAvTRNsraH56aefzGeffWZsTahRwLbmmmsaHZu0JTXzULs8XdPU1GONNdYwtmbX2FqptO1Kg/LquqZ2+brVm8ak9vhLLrmksXdCzPPPP+9uXd95553G1oI2CIJqff90q13NvKLJf1YqgKvlpPeE3usKmAslfVlTUiVONCke0HUibRUf0X0o9pwAtJhMFaarNk3BTn5q06ZNKgPQNHcGyT8G+a9PP/10891335kLLrggf1ZqXo8ePdrVTP/f//2f6yS2zz77pKbsvqB6zxx44IHG3nYzHTt29JNT+ThixAhXbrVlVa2HOiPqHFMHhI8++ihV+6RAc/z48aZnz57uQ3aVVVYxd999twuoNT2tSW2+dWdnzz33NLoupzG1b9/e3HvvvebFF180ajt5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" /><!-- --></p>
+<p>The ecosystem is built around the idea that you should be able
+to:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Specify</strong> these processes explicitly (what counts as
+an event, what anchors time)</li>
+<li><strong>Prepare</strong> model training/test/validation
+(<strong>TTV</strong>) tables from raw-ish EHR data under one or more
+lenses</li>
+<li><strong>Simulate</strong> trajectories with transparent state
+updates and event rules</li>
+<li><strong>Summarize</strong> results and <strong>validate forecast
+accuracy</strong> in different ways without changing the underlying
+simulated patient histories</li>
+<li><strong>Orchestrate</strong> multiple models (for example, a chronic
+disease model plus a within-hospitalization model) over a single patient
+time axis</li>
+</ol>
+</div>
+<div id="ecosystem-components" class="section level2">
+<h2>Ecosystem Components</h2>
+<p>The ecosystem is modular by design: each package has a narrow job and
+an explicit contract.</p>
+<table>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Job (one sentence)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>patientSimCore</td>
+<td>Owns simulation “truth”: timekeeping, patient state, event logs, and
+the engine that runs a model</td>
+</tr>
+<tr class="even">
+<td>patientSimPrepare</td>
+<td>Transforms raw longitudinal inputs into model
+training/test/validation (<strong>TTV</strong>) tables (often under
+multiple lenses)</td>
+</tr>
+<tr class="odd">
+<td>patientSimForecast</td>
+<td>Read-only summaries and reporting views of simulated patient
+histories</td>
+</tr>
+<tr class="even">
+<td>patientSimValidation</td>
+<td>Evaluates simulated vs observed with explicit masks and
+denominators</td>
+</tr>
+<tr class="odd">
+<td>patientSimOrchestrate</td>
+<td>Coordinates scenario runs and comparisons across bundles, or
+composes multiple bundles over one patient timeline</td>
+</tr>
+<tr class="even">
+<td>patientSimModelTemplate</td>
+<td>A starting point for creating new model packages that follow
+ecosystem conventions</td>
+</tr>
+<tr class="odd">
+<td>patientSimASCVD</td>
+<td>A didactic, worked example that ties the ecosystem together</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="example-model-cardiovascular-disease" class="section level2">
+<h2>Example Model: Cardiovascular Disease</h2>
+<p>In this package, we’ll use a model for <strong>atherosclerotic
+cardiovascular disease (ASCVD)</strong> as a primary teaching
+example.</p>
+<p>In this vignette, we will keep the example
+<strong>self-contained</strong> and intentionally “toy”: we’ll define
+the core model components directly in the vignette so you can see their
+structure.</p>
+<p>Later vignettes will show how to replace these toy components with
+models trained from EHR-derived tables (and how to validate and compare
+scenarios).</p>
+<div id="schema-what-exists-in-the-model-world" class="section level3">
+<h3>1) Schema: what exists in the model world</h3>
+<p>A schema is the vocabulary of the model: state variables, event
+types, and basic conventions.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(patientSimCore)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co"># Best practice: declare the model time unit up front.</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># We do this in a shared &quot;context&quot; object (ctx), which is passed into the Engine</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># at run-time. Downstream packages can use ctx$time$unit to label and sanity-check</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># time-related quantities.</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>ctx <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">ps_set_time_unit</span>(<span class="at">ctx =</span> <span class="fu">list</span>(), <span class="at">unit =</span> <span class="st">&quot;years&quot;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co"># patientSimCore schemas are named lists of variable descriptors.</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># Each variable has at least:</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#   - default: baseline value when init does not provide it</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#   - type: used by downstream summary/validation code</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co"># and may also include:</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#   - coerce / validate</span></span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co">#   - blocks: panel membership (e.g., BP, lipids)</span></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>schema <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>  <span class="at">age =</span> <span class="fu">list</span>(</span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a>    <span class="at">type     =</span> <span class="st">&quot;continuous&quot;</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a>    <span class="at">default  =</span> <span class="dv">50</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>    <span class="at">coerce   =</span> as.numeric,</span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a>    <span class="at">validate =</span> <span class="cf">function</span>(x) <span class="fu">length</span>(x) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span> <span class="sc">&amp;&amp;</span> (<span class="fu">is.na</span>(x) <span class="sc">||</span> (<span class="fu">is.finite</span>(x) <span class="sc">&amp;&amp;</span> x <span class="sc">&gt;=</span> <span class="dv">0</span>))</span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a>  ),</span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a>  <span class="at">sbp =</span> <span class="fu">list</span>(</span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a>    <span class="at">type     =</span> <span class="st">&quot;continuous&quot;</span>,</span>
+<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a>    <span class="at">default  =</span> <span class="dv">120</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" tabindex="-1"></a>    <span class="at">coerce   =</span> as.numeric,</span>
+<span id="cb1-28"><a href="#cb1-28" tabindex="-1"></a>    <span class="at">validate =</span> <span class="cf">function</span>(x) <span class="fu">length</span>(x) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span> <span class="sc">&amp;&amp;</span> (<span class="fu">is.na</span>(x) <span class="sc">||</span> <span class="fu">is.finite</span>(x)),</span>
+<span id="cb1-29"><a href="#cb1-29" tabindex="-1"></a>    <span class="at">blocks   =</span> <span class="st">&quot;bp&quot;</span></span>
+<span id="cb1-30"><a href="#cb1-30" tabindex="-1"></a>  ),</span>
+<span id="cb1-31"><a href="#cb1-31" tabindex="-1"></a>  <span class="at">dbp =</span> <span class="fu">list</span>(</span>
+<span id="cb1-32"><a href="#cb1-32" tabindex="-1"></a>    <span class="at">type     =</span> <span class="st">&quot;continuous&quot;</span>,</span>
+<span id="cb1-33"><a href="#cb1-33" tabindex="-1"></a>    <span class="at">default  =</span> <span class="dv">80</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" tabindex="-1"></a>    <span class="at">coerce   =</span> as.numeric,</span>
+<span id="cb1-35"><a href="#cb1-35" tabindex="-1"></a>    <span class="at">validate =</span> <span class="cf">function</span>(x) <span class="fu">length</span>(x) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span> <span class="sc">&amp;&amp;</span> (<span class="fu">is.na</span>(x) <span class="sc">||</span> <span class="fu">is.finite</span>(x)),</span>
+<span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a>    <span class="at">blocks   =</span> <span class="st">&quot;bp&quot;</span></span>
+<span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a>  ),</span>
+<span id="cb1-38"><a href="#cb1-38" tabindex="-1"></a></span>
+<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a>  <span class="at">ldl =</span> <span class="fu">list</span>(</span>
+<span id="cb1-40"><a href="#cb1-40" tabindex="-1"></a>    <span class="at">type     =</span> <span class="st">&quot;continuous&quot;</span>,</span>
+<span id="cb1-41"><a href="#cb1-41" tabindex="-1"></a>    <span class="at">default  =</span> <span class="dv">120</span>,</span>
+<span id="cb1-42"><a href="#cb1-42" tabindex="-1"></a>    <span class="at">coerce   =</span> as.numeric,</span>
+<span id="cb1-43"><a href="#cb1-43" tabindex="-1"></a>    <span class="at">validate =</span> <span class="cf">function</span>(x) <span class="fu">length</span>(x) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span> <span class="sc">&amp;&amp;</span> (<span class="fu">is.na</span>(x) <span class="sc">||</span> <span class="fu">is.finite</span>(x)),</span>
+<span id="cb1-44"><a href="#cb1-44" tabindex="-1"></a>    <span class="at">blocks   =</span> <span class="st">&quot;lipids&quot;</span></span>
+<span id="cb1-45"><a href="#cb1-45" tabindex="-1"></a>  ),</span>
+<span id="cb1-46"><a href="#cb1-46" tabindex="-1"></a>  <span class="at">hdl =</span> <span class="fu">list</span>(</span>
+<span id="cb1-47"><a href="#cb1-47" tabindex="-1"></a>    <span class="at">type     =</span> <span class="st">&quot;continuous&quot;</span>,</span>
+<span id="cb1-48"><a href="#cb1-48" tabindex="-1"></a>    <span class="at">default  =</span> <span class="dv">50</span>,</span>
+<span id="cb1-49"><a href="#cb1-49" tabindex="-1"></a>    <span class="at">coerce   =</span> as.numeric,</span>
+<span id="cb1-50"><a href="#cb1-50" tabindex="-1"></a>    <span class="at">validate =</span> <span class="cf">function</span>(x) <span class="fu">length</span>(x) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span> <span class="sc">&amp;&amp;</span> (<span class="fu">is.na</span>(x) <span class="sc">||</span> <span class="fu">is.finite</span>(x)),</span>
+<span id="cb1-51"><a href="#cb1-51" tabindex="-1"></a>    <span class="at">blocks   =</span> <span class="st">&quot;lipids&quot;</span></span>
+<span id="cb1-52"><a href="#cb1-52" tabindex="-1"></a>  ),</span>
+<span id="cb1-53"><a href="#cb1-53" tabindex="-1"></a></span>
+<span id="cb1-54"><a href="#cb1-54" tabindex="-1"></a>  <span class="at">diabetes =</span> <span class="fu">list</span>(</span>
+<span id="cb1-55"><a href="#cb1-55" tabindex="-1"></a>    <span class="at">type     =</span> <span class="st">&quot;binary&quot;</span>,</span>
+<span id="cb1-56"><a href="#cb1-56" tabindex="-1"></a>    <span class="at">levels   =</span> <span class="fu">c</span>(<span class="st">&quot;0&quot;</span>,<span class="st">&quot;1&quot;</span>),</span>
+<span id="cb1-57"><a href="#cb1-57" tabindex="-1"></a>    <span class="at">default  =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb1-58"><a href="#cb1-58" tabindex="-1"></a>    <span class="at">coerce   =</span> as.logical,</span>
+<span id="cb1-59"><a href="#cb1-59" tabindex="-1"></a>    <span class="at">validate =</span> <span class="cf">function</span>(x) <span class="fu">length</span>(x) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span> <span class="sc">&amp;&amp;</span> (<span class="fu">is.na</span>(x) <span class="sc">||</span> <span class="fu">is.logical</span>(x))</span>
+<span id="cb1-60"><a href="#cb1-60" tabindex="-1"></a>  ),</span>
+<span id="cb1-61"><a href="#cb1-61" tabindex="-1"></a>  <span class="at">smoker =</span> <span class="fu">list</span>(</span>
+<span id="cb1-62"><a href="#cb1-62" tabindex="-1"></a>    <span class="at">type     =</span> <span class="st">&quot;binary&quot;</span>,</span>
+<span id="cb1-63"><a href="#cb1-63" tabindex="-1"></a>    <span class="at">levels   =</span> <span class="fu">c</span>(<span class="st">&quot;0&quot;</span>,<span class="st">&quot;1&quot;</span>),</span>
+<span id="cb1-64"><a href="#cb1-64" tabindex="-1"></a>    <span class="at">default  =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb1-65"><a href="#cb1-65" tabindex="-1"></a>    <span class="at">coerce   =</span> as.logical,</span>
+<span id="cb1-66"><a href="#cb1-66" tabindex="-1"></a>    <span class="at">validate =</span> <span class="cf">function</span>(x) <span class="fu">length</span>(x) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span> <span class="sc">&amp;&amp;</span> (<span class="fu">is.na</span>(x) <span class="sc">||</span> <span class="fu">is.logical</span>(x))</span>
+<span id="cb1-67"><a href="#cb1-67" tabindex="-1"></a>  )</span>
+<span id="cb1-68"><a href="#cb1-68" tabindex="-1"></a>)</span>
+<span id="cb1-69"><a href="#cb1-69" tabindex="-1"></a></span>
+<span id="cb1-70"><a href="#cb1-70" tabindex="-1"></a><span class="co"># Optional: let Core check that this looks like a schema.</span></span>
+<span id="cb1-71"><a href="#cb1-71" tabindex="-1"></a><span class="fu">ps_schema_validate</span>(schema)</span>
+<span id="cb1-72"><a href="#cb1-72" tabindex="-1"></a></span>
+<span id="cb1-73"><a href="#cb1-73" tabindex="-1"></a><span class="co"># Show the shape, without printing a wall of text.</span></span>
+<span id="cb1-74"><a href="#cb1-74" tabindex="-1"></a><span class="fu">str</span>(schema, <span class="at">max.level =</span> <span class="dv">1</span>)</span>
+<span id="cb1-75"><a href="#cb1-75" tabindex="-1"></a><span class="co">#&gt; List of 7</span></span>
+<span id="cb1-76"><a href="#cb1-76" tabindex="-1"></a><span class="co">#&gt;  $ age     :List of 4</span></span>
+<span id="cb1-77"><a href="#cb1-77" tabindex="-1"></a><span class="co">#&gt;  $ sbp     :List of 5</span></span>
+<span id="cb1-78"><a href="#cb1-78" tabindex="-1"></a><span class="co">#&gt;  $ dbp     :List of 5</span></span>
+<span id="cb1-79"><a href="#cb1-79" tabindex="-1"></a><span class="co">#&gt;  $ ldl     :List of 5</span></span>
+<span id="cb1-80"><a href="#cb1-80" tabindex="-1"></a><span class="co">#&gt;  $ hdl     :List of 5</span></span>
+<span id="cb1-81"><a href="#cb1-81" tabindex="-1"></a><span class="co">#&gt;  $ diabetes:List of 5</span></span>
+<span id="cb1-82"><a href="#cb1-82" tabindex="-1"></a><span class="co">#&gt;  $ smoker  :List of 5</span></span>
+<span id="cb1-83"><a href="#cb1-83" tabindex="-1"></a>schema<span class="sc">$</span>age</span>
+<span id="cb1-84"><a href="#cb1-84" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
+<span id="cb1-85"><a href="#cb1-85" tabindex="-1"></a><span class="co">#&gt; [1] &quot;continuous&quot;</span></span>
+<span id="cb1-86"><a href="#cb1-86" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-87"><a href="#cb1-87" tabindex="-1"></a><span class="co">#&gt; $default</span></span>
+<span id="cb1-88"><a href="#cb1-88" tabindex="-1"></a><span class="co">#&gt; [1] 50</span></span>
+<span id="cb1-89"><a href="#cb1-89" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-90"><a href="#cb1-90" tabindex="-1"></a><span class="co">#&gt; $coerce</span></span>
+<span id="cb1-91"><a href="#cb1-91" tabindex="-1"></a><span class="co">#&gt; function (x, ...)  .Primitive(&quot;as.double&quot;)</span></span>
+<span id="cb1-92"><a href="#cb1-92" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-93"><a href="#cb1-93" tabindex="-1"></a><span class="co">#&gt; $validate</span></span>
+<span id="cb1-94"><a href="#cb1-94" tabindex="-1"></a><span class="co">#&gt; function (x) </span></span>
+<span id="cb1-95"><a href="#cb1-95" tabindex="-1"></a><span class="co">#&gt; length(x) == 1L &amp;&amp; (is.na(x) || (is.finite(x) &amp;&amp; x &gt;= 0))</span></span>
+<span id="cb1-96"><a href="#cb1-96" tabindex="-1"></a>schema<span class="sc">$</span>ldl</span>
+<span id="cb1-97"><a href="#cb1-97" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
+<span id="cb1-98"><a href="#cb1-98" tabindex="-1"></a><span class="co">#&gt; [1] &quot;continuous&quot;</span></span>
+<span id="cb1-99"><a href="#cb1-99" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-100"><a href="#cb1-100" tabindex="-1"></a><span class="co">#&gt; $default</span></span>
+<span id="cb1-101"><a href="#cb1-101" tabindex="-1"></a><span class="co">#&gt; [1] 120</span></span>
+<span id="cb1-102"><a href="#cb1-102" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-103"><a href="#cb1-103" tabindex="-1"></a><span class="co">#&gt; $coerce</span></span>
+<span id="cb1-104"><a href="#cb1-104" tabindex="-1"></a><span class="co">#&gt; function (x, ...)  .Primitive(&quot;as.double&quot;)</span></span>
+<span id="cb1-105"><a href="#cb1-105" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-106"><a href="#cb1-106" tabindex="-1"></a><span class="co">#&gt; $validate</span></span>
+<span id="cb1-107"><a href="#cb1-107" tabindex="-1"></a><span class="co">#&gt; function (x) </span></span>
+<span id="cb1-108"><a href="#cb1-108" tabindex="-1"></a><span class="co">#&gt; length(x) == 1L &amp;&amp; (is.na(x) || is.finite(x))</span></span>
+<span id="cb1-109"><a href="#cb1-109" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-110"><a href="#cb1-110" tabindex="-1"></a><span class="co">#&gt; $blocks</span></span>
+<span id="cb1-111"><a href="#cb1-111" tabindex="-1"></a><span class="co">#&gt; [1] &quot;lipids&quot;</span></span></code></pre></div>
+</div>
+<div id="modelbundle-a-portable-model-artifact" class="section level3">
+<h3>2) ModelBundle: a portable model artifact</h3>
+<p>A <strong>ModelBundle</strong> is a single object that contains
+everything needed to simulate: it proposes candidate next events for one
+or more processes, applies state updates, and decides when to stop.</p>
+<p>patientSimCore expects a bundle with (at minimum):</p>
+<ul>
+<li><code>propose_events(patient, ctx, ...)</code> (multiple processes
+can propose an event)</li>
+<li><code>transition(patient, event, ctx)</code> (update state given the
+selected event)</li>
+<li><code>stop(patient, event, ctx)</code> (terminal logic)</li>
+<li><code>observe(patient, event, ctx)</code> <em>(optional)</em>: what
+to record after each event (Core will still maintain the event log
+either way)</li>
+<li><code>refresh_rules(...)</code> <em>(optional)</em>: tells the
+engine which processes need to re-propose their next event after
+changes</li>
+</ul>
+<p>You’ll see a <code>ctx</code> argument threaded through these
+functions. <code>ctx</code> is just a run-level “context” list: it’s how
+you pass shared settings like the time unit (years vs days) and optional
+model parameters into the simulation.</p>
+<p>We’ll build that list <strong>right here</strong>, one component at a
+time.</p>
+<p>One pragmatic note: <code>observe()</code> is optional because Core
+always maintains an internal event log. If your bundle doesn’t provide
+<code>observe()</code>, you can still simulate, but you won’t get a
+user-friendly per-event table back.</p>
+<p>Before we start, one vocabulary note:</p>
+<ul>
+<li>A <strong>rate</strong> is “how often something happens” (for
+example, 3 lab draws per year).</li>
+<li>A <strong>hazard</strong> is a rate that can depend on the patient’s
+current state (for example, MI risk increasing with age and LDL).</li>
+</ul>
+<p>In this toy model we use both ideas, but we keep the numbers
+intentionally tame so the output stays readable.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># We start by defining how frequently each process proposes events.</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co"># Everything below is intentionally toy and tuned only for readable output.</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># Helper: exponential waiting time given a rate per year</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>rexp_dt <span class="ot">&lt;-</span> <span class="cf">function</span>(rate_per_year) stats<span class="sc">::</span><span class="fu">rexp</span>(<span class="dv">1</span>, <span class="at">rate =</span> rate_per_year)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># --- (a) Process rates / hazards (toy, NOT clinical) ---</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co"># Labs are a faster measurement process; office visits are a medium process.</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>rate_labs   <span class="ot">&lt;-</span> <span class="cf">function</span>(state) <span class="fl">3.0</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>rate_office <span class="ot">&lt;-</span> <span class="cf">function</span>(state) <span class="fl">1.0</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co"># Clinical events are modeled as a slower process.</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co"># These hazards are intentionally tiny here so we get readable trajectories.</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>hazard_mi <span class="ot">&lt;-</span> <span class="cf">function</span>(state) {</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>  lin <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">14.8</span> <span class="sc">+</span> <span class="fl">0.03</span> <span class="sc">*</span> (state<span class="sc">$</span>age <span class="sc">-</span> <span class="dv">50</span>) <span class="sc">+</span> <span class="fl">0.010</span> <span class="sc">*</span> (state<span class="sc">$</span>sbp <span class="sc">-</span> <span class="dv">120</span>) <span class="sc">+</span> <span class="fl">0.008</span> <span class="sc">*</span> (state<span class="sc">$</span>ldl <span class="sc">-</span> <span class="dv">120</span>) <span class="sc">+</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>    <span class="fl">0.7</span> <span class="sc">*</span> <span class="fu">as.integer</span>(state<span class="sc">$</span>diabetes) <span class="sc">+</span> <span class="fl">0.6</span> <span class="sc">*</span> <span class="fu">as.integer</span>(state<span class="sc">$</span>smoker)</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>  <span class="fu">exp</span>(lin)</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>}</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>hazard_stroke <span class="ot">&lt;-</span> <span class="cf">function</span>(state) {</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>  lin <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">15.1</span> <span class="sc">+</span> <span class="fl">0.03</span> <span class="sc">*</span> (state<span class="sc">$</span>age <span class="sc">-</span> <span class="dv">50</span>) <span class="sc">+</span> <span class="fl">0.012</span> <span class="sc">*</span> (state<span class="sc">$</span>sbp <span class="sc">-</span> <span class="dv">120</span>) <span class="sc">+</span> <span class="fl">0.004</span> <span class="sc">*</span> (state<span class="sc">$</span>ldl <span class="sc">-</span> <span class="dv">120</span>) <span class="sc">+</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>    <span class="fl">0.6</span> <span class="sc">*</span> <span class="fu">as.integer</span>(state<span class="sc">$</span>diabetes) <span class="sc">+</span> <span class="fl">0.4</span> <span class="sc">*</span> <span class="fu">as.integer</span>(state<span class="sc">$</span>smoker)</span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>  <span class="fu">exp</span>(lin)</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>}</span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>hazard_hosp <span class="ot">&lt;-</span> <span class="cf">function</span>(state) {</span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a>  lin <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">15.0</span> <span class="sc">+</span> <span class="fl">0.02</span> <span class="sc">*</span> (state<span class="sc">$</span>age <span class="sc">-</span> <span class="dv">50</span>) <span class="sc">+</span> <span class="fl">0.006</span> <span class="sc">*</span> (state<span class="sc">$</span>sbp <span class="sc">-</span> <span class="dv">120</span>) <span class="sc">+</span> <span class="fl">0.004</span> <span class="sc">*</span> (state<span class="sc">$</span>ldl <span class="sc">-</span> <span class="dv">120</span>)</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a>  <span class="fu">exp</span>(lin)</span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a>}</span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a>hazard_death <span class="ot">&lt;-</span> <span class="cf">function</span>(state) {</span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a>  lin <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">15.6</span> <span class="sc">+</span> <span class="fl">0.04</span> <span class="sc">*</span> (state<span class="sc">$</span>age <span class="sc">-</span> <span class="dv">50</span>) <span class="sc">+</span> <span class="fl">0.003</span> <span class="sc">*</span> (state<span class="sc">$</span>sbp <span class="sc">-</span> <span class="dv">120</span>) <span class="sc">+</span> <span class="fl">0.002</span> <span class="sc">*</span> (state<span class="sc">$</span>ldl <span class="sc">-</span> <span class="dv">120</span>)</span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a>  <span class="fu">exp</span>(lin)</span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a>}</span></code></pre></div>
+<p>Now we define the first required ModelBundle component:
+<strong><code>propose_events()</code></strong>.</p>
+<p>Think of this as the “calendar clerk” for each process. Each process
+proposes its next event time, and Core will pick whichever happens
+first.</p>
+<p>One small detail that matters later: each proposal carries a
+<code>process_id</code>. That ID is how Core keeps track of “which
+process proposed what” (for example, labs vs office visits), which in
+turn lets you write selective refresh rules and process-specific
+summaries.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>propose_events <span class="ot">&lt;-</span> <span class="cf">function</span>(patient, <span class="at">ctx =</span> <span class="cn">NULL</span>, <span class="at">process_ids =</span> <span class="cn">NULL</span>, <span class="at">current_proposals =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  t0 <span class="ot">&lt;-</span> patient<span class="sc">$</span>last_time</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  s  <span class="ot">&lt;-</span> patient<span class="sc">$</span><span class="fu">as_list</span>(<span class="fu">c</span>(<span class="st">&quot;age&quot;</span>,<span class="st">&quot;sbp&quot;</span>,<span class="st">&quot;dbp&quot;</span>,<span class="st">&quot;ldl&quot;</span>,<span class="st">&quot;hdl&quot;</span>,<span class="st">&quot;diabetes&quot;</span>,<span class="st">&quot;smoker&quot;</span>))</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  proposals <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  pid_labs <span class="ot">&lt;-</span> <span class="st">&quot;01_labs&quot;</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(process_ids) <span class="sc">||</span> pid_labs <span class="sc">%in%</span> process_ids) {</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>    proposals[[pid_labs]] <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>      <span class="at">process_id =</span> pid_labs,</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>      <span class="at">time_next  =</span> t0 <span class="sc">+</span> <span class="fu">rexp_dt</span>(<span class="fu">rate_labs</span>(s)),</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>      <span class="at">event_type =</span> <span class="st">&quot;LAB&quot;</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>    )</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  }</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  pid_office <span class="ot">&lt;-</span> <span class="st">&quot;02_office&quot;</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(process_ids) <span class="sc">||</span> pid_office <span class="sc">%in%</span> process_ids) {</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>    proposals[[pid_office]] <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>      <span class="at">process_id =</span> pid_office,</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>      <span class="at">time_next  =</span> t0 <span class="sc">+</span> <span class="fu">rexp_dt</span>(<span class="fu">rate_office</span>(s)),</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>      <span class="at">event_type =</span> <span class="st">&quot;OFFICE&quot;</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>    )</span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  }</span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>  pid_clin <span class="ot">&lt;-</span> <span class="st">&quot;03_clinical&quot;</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(process_ids) <span class="sc">||</span> pid_clin <span class="sc">%in%</span> process_ids) {</span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>    t_mi   <span class="ot">&lt;-</span> <span class="fu">rexp_dt</span>(<span class="fu">hazard_mi</span>(s))</span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>    t_st   <span class="ot">&lt;-</span> <span class="fu">rexp_dt</span>(<span class="fu">hazard_stroke</span>(s))</span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a>    t_hosp <span class="ot">&lt;-</span> <span class="fu">rexp_dt</span>(<span class="fu">hazard_hosp</span>(s))</span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>    t_dx   <span class="ot">&lt;-</span> <span class="fu">rexp_dt</span>(<span class="fu">hazard_death</span>(s))</span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>    dt <span class="ot">&lt;-</span> <span class="fu">min</span>(t_mi, t_st, t_hosp, t_dx)</span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>    et <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;MI&quot;</span>,<span class="st">&quot;STROKE&quot;</span>,<span class="st">&quot;HOSP&quot;</span>,<span class="st">&quot;DEATH&quot;</span>)[<span class="fu">which.min</span>(<span class="fu">c</span>(t_mi, t_st, t_hosp, t_dx))]</span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>    proposals[[pid_clin]] <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a>      <span class="at">process_id =</span> pid_clin,</span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>      <span class="at">time_next  =</span> t0 <span class="sc">+</span> dt,</span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a>      <span class="at">event_type =</span> et</span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a>    )</span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a>  }</span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a></span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a>  proposals</span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a>}</span></code></pre></div>
+<p>Next is <strong><code>transition()</code></strong>. This is where the
+model updates state <em>after</em> the realized event.</p>
+<p>A key point: age updates deterministically with elapsed time, but
+risk factors only change when an event implies new information (labs
+update lipids; office visits update blood pressure).</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>transition <span class="ot">&lt;-</span> <span class="cf">function</span>(patient, event, <span class="at">ctx =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="co"># Age updates deterministically from the model time unit (years in this vignette).</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  dt <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(event<span class="sc">$</span>time_next <span class="sc">-</span> patient<span class="sc">$</span>last_time)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  s <span class="ot">&lt;-</span> patient<span class="sc">$</span><span class="fu">as_list</span>(<span class="fu">c</span>(<span class="st">&quot;age&quot;</span>,<span class="st">&quot;sbp&quot;</span>,<span class="st">&quot;dbp&quot;</span>,<span class="st">&quot;ldl&quot;</span>,<span class="st">&quot;hdl&quot;</span>,<span class="st">&quot;diabetes&quot;</span>,<span class="st">&quot;smoker&quot;</span>))</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  changes <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">age =</span> s<span class="sc">$</span>age <span class="sc">+</span> dt)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="co"># Event-conditional updates. (Toy measurement dynamics, not clinical.)</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">identical</span>(event<span class="sc">$</span>event_type, <span class="st">&quot;LAB&quot;</span>)) {</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>    changes<span class="sc">$</span>ldl <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="dv">30</span>,  s<span class="sc">$</span>ldl <span class="sc">+</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">6</span>))</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>    changes<span class="sc">$</span>hdl <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="dv">10</span>,  s<span class="sc">$</span>hdl <span class="sc">+</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">3</span>))</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  }</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">identical</span>(event<span class="sc">$</span>event_type, <span class="st">&quot;OFFICE&quot;</span>)) {</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>    changes<span class="sc">$</span>sbp <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="dv">60</span>,  s<span class="sc">$</span>sbp <span class="sc">+</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">5</span>))</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>    changes<span class="sc">$</span>dbp <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="dv">40</span>,  s<span class="sc">$</span>dbp <span class="sc">+</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">3</span>))</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>  }</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  changes</span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>}</span></code></pre></div>
+<p>The engine also needs a <strong><code>stop()</code></strong>
+function. Here we stop only on death.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>stop <span class="ot">&lt;-</span> <span class="cf">function</span>(patient, event, <span class="at">ctx =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="fu">identical</span>(event<span class="sc">$</span>event_type, <span class="st">&quot;DEATH&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>}</span></code></pre></div>
+<p>After each event, Core asks the model what it wants to
+<strong>record</strong>. That’s <code>observe()</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>observe <span class="ot">&lt;-</span> <span class="cf">function</span>(patient, event, <span class="at">ctx =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  s <span class="ot">&lt;-</span> patient<span class="sc">$</span><span class="fu">as_list</span>(<span class="fu">c</span>(<span class="st">&quot;age&quot;</span>,<span class="st">&quot;sbp&quot;</span>,<span class="st">&quot;dbp&quot;</span>,<span class="st">&quot;ldl&quot;</span>,<span class="st">&quot;hdl&quot;</span>,<span class="st">&quot;diabetes&quot;</span>,<span class="st">&quot;smoker&quot;</span>))</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>    <span class="at">time       =</span> patient<span class="sc">$</span>last_time,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>    <span class="at">process_id =</span> event<span class="sc">$</span>process_id,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>    <span class="at">event_type =</span> event<span class="sc">$</span>event_type,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>    <span class="at">age        =</span> s<span class="sc">$</span>age,</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>    <span class="at">sbp        =</span> s<span class="sc">$</span>sbp,</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>    <span class="at">dbp        =</span> s<span class="sc">$</span>dbp,</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>    <span class="at">ldl        =</span> s<span class="sc">$</span>ldl,</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>    <span class="at">hdl        =</span> s<span class="sc">$</span>hdl,</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>    <span class="at">diabetes   =</span> s<span class="sc">$</span>diabetes,</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>    <span class="at">smoker     =</span> s<span class="sc">$</span>smoker</span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>  )</span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>}</span></code></pre></div>
+<p>Finally, <strong>refresh rules</strong> tell Core which processes
+should “rethink their next proposal” after an event happens.</p>
+<p>In this vignette we keep it simple and refresh everything after every
+event. Later vignettes show selective refresh rules (for example,
+simulated time-to-hospitalization doesn’t need to refresh after every
+lab draw).</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>refresh_rules <span class="ot">&lt;-</span> <span class="cf">function</span>(patient, last_event, changes, <span class="at">ctx =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="st">&quot;ALL&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>}</span></code></pre></div>
+<p>Now we can assemble the ModelBundle as a plain list.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>bundle <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="at">propose_events =</span> propose_events,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">transition     =</span> transition,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">stop           =</span> stop,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">observe        =</span> observe,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">refresh_rules  =</span> refresh_rules</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>)</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="fu">names</span>(bundle)</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;propose_events&quot; &quot;transition&quot;     &quot;stop&quot;           &quot;observe&quot;       </span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; [5] &quot;refresh_rules&quot;</span></span></code></pre></div>
+</div>
+<div id="running-the-bundle-with-patientsimcores-engine" class="section level3">
+<h3>3) Running the bundle with patientSimCore’s Engine</h3>
+<p>A quick note on <strong>providers</strong>: Core runs simulations by
+asking a <em>provider</em> for a model bundle.</p>
+<p>In <code>patientSimCore</code>, a provider is any object with a
+<code>$load(model_spec, ...)</code> method. Core ships with a few
+provider styles:</p>
+<ul>
+<li><code>PackageProvider</code>: a user-defined in-memory registry
+(fully supported)</li>
+<li><code>FileProvider</code>: load bundles from R objects on disk
+(fully supported)</li>
+<li><code>MLflowProvider</code>: a scaffold for MLflow workflows (not
+yet exercised end-to-end)</li>
+</ul>
+<p>Here we use a <code>PackageProvider</code>, which is just a named
+registry that says: “if the engine asks for model <strong>X</strong>,
+call this builder function to produce its bundle.”</p>
+<p>Why a builder function (instead of storing <code>bundle</code>
+directly)? Because in real workflows you often want the provider to:</p>
+<ul>
+<li>inject trained model artifacts into the bundle (loaded from disk,
+MLflow, etc.)</li>
+<li>swap between fitted versions or scenarios</li>
+<li>construct composite bundles on demand</li>
+</ul>
+<p>Now we wire the bundle into Core exactly the way the engine expects:
+via a provider. This keeps the lesson consistent with the Core vignette
+scaffold.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># The registry maps a model &quot;name&quot; to a function that can build its ModelBundle.</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co"># Here, the builder simply returns the bundle we already constructed.</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>prov <span class="ot">&lt;-</span> PackageProvider<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">registry =</span> <span class="fu">list</span>(</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="co"># Minimal builder: ignore args and return the bundle we built above.</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>    <span class="at">ascvd_toy =</span> <span class="cf">function</span>(...) bundle</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  )</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>)</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>eng <span class="ot">&lt;-</span> Engine<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>  <span class="at">provider   =</span> prov,</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>  <span class="at">model_spec =</span> <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;ascvd_toy&quot;</span>),</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>  <span class="at">ctx        =</span> ctx</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="two-patients-two-trajectories" class="section level3">
+<h3>4) Two patients, two trajectories</h3>
+<p>We’ll simulate two patients with different risk profiles. This is
+enough to see how the structure works, without drowning in output.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>patient_low_risk <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">id =</span> <span class="st">&quot;P1&quot;</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">age =</span> <span class="dv">45</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">sbp =</span> <span class="dv">118</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">dbp =</span> <span class="dv">76</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">ldl =</span> <span class="dv">105</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">hdl =</span> <span class="dv">58</span>,</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  <span class="at">diabetes =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  <span class="at">smoker =</span> <span class="cn">FALSE</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>)</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>patient_high_risk <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>  <span class="at">id =</span> <span class="st">&quot;P2&quot;</span>,</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  <span class="at">age =</span> <span class="dv">68</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  <span class="at">sbp =</span> <span class="dv">152</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>  <span class="at">dbp =</span> <span class="dv">92</span>,</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>  <span class="at">ldl =</span> <span class="dv">165</span>,</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>  <span class="at">hdl =</span> <span class="dv">38</span>,</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>  <span class="at">diabetes =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>  <span class="at">smoker =</span> <span class="cn">TRUE</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>)</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>patients <span class="ot">&lt;-</span> <span class="fu">list</span>(patient_low_risk, patient_high_risk)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Two patients, simulated for 2 years.</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co"># We&#39;ll cap max_events so output stays readable even if a rate is high.</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>max_events <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>horizon_years <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co"># P1</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>pid1 <span class="ot">&lt;-</span> patient_low_risk<span class="sc">$</span>id</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>init1 <span class="ot">&lt;-</span> patient_low_risk; init1<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">new_patient</span>(<span class="at">init =</span> init1, <span class="at">schema =</span> schema, <span class="at">time0 =</span> <span class="dv">0</span>, <span class="at">event_type0 =</span> <span class="st">&quot;init&quot;</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>out1 <span class="ot">&lt;-</span> eng<span class="sc">$</span><span class="fu">run</span>(p1, <span class="at">max_events =</span> max_events, <span class="at">max_time =</span> horizon_years, <span class="at">return_observations =</span> <span class="cn">TRUE</span>, <span class="at">ctx =</span> ctx)</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>traj1 <span class="ot">&lt;-</span> out1<span class="sc">$</span>observations</span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>traj1<span class="sc">$</span>patient_id <span class="ot">&lt;-</span> pid1</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co"># P2</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>pid2 <span class="ot">&lt;-</span> patient_high_risk<span class="sc">$</span>id</span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>init2 <span class="ot">&lt;-</span> patient_high_risk; init2<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">new_patient</span>(<span class="at">init =</span> init2, <span class="at">schema =</span> schema, <span class="at">time0 =</span> <span class="dv">0</span>, <span class="at">event_type0 =</span> <span class="st">&quot;init&quot;</span>)</span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>out2 <span class="ot">&lt;-</span> eng<span class="sc">$</span><span class="fu">run</span>(p2, <span class="at">max_events =</span> max_events, <span class="at">max_time =</span> horizon_years, <span class="at">return_observations =</span> <span class="cn">TRUE</span>, <span class="at">ctx =</span> ctx)</span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>traj2 <span class="ot">&lt;-</span> out2<span class="sc">$</span>observations</span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>traj2<span class="sc">$</span>patient_id <span class="ot">&lt;-</span> pid2</span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a></span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>traj1</span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt;        time process_id event_type      age      sbp      dbp      ldl      hdl</span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt; 1 0.2517273    01_labs        LAB 45.25173 118.0000 76.00000 103.2317 57.98270</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co">#&gt; 2 0.3395340    01_labs        LAB 45.33953 118.0000 76.00000 102.9621 57.93413</span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="co">#&gt; 3 0.5577829    01_labs        LAB 45.55778 118.0000 76.00000 107.6549 58.15782</span></span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co">#&gt; 4 1.7310950  02_office     OFFICE 46.73110 116.8215 74.37134 107.6549 58.15782</span></span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a><span class="co">#&gt; 5 2.0328360  02_office     OFFICE 47.03284 114.6739 78.08625 107.6549 58.15782</span></span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a><span class="co">#&gt;   diabetes smoker patient_id</span></span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a><span class="co">#&gt; 1    FALSE  FALSE         P1</span></span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a><span class="co">#&gt; 2    FALSE  FALSE         P1</span></span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a><span class="co">#&gt; 3    FALSE  FALSE         P1</span></span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a><span class="co">#&gt; 4    FALSE  FALSE         P1</span></span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a><span class="co">#&gt; 5    FALSE  FALSE         P1</span></span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a>traj2</span>
+<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a><span class="co">#&gt;        time process_id event_type      age      sbp      dbp      ldl      hdl</span></span>
+<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a><span class="co">#&gt; 1 0.4177018    01_labs        LAB 68.41770 152.0000 92.00000 160.0077 34.50029</span></span>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a><span class="co">#&gt; 2 0.9286116    01_labs        LAB 68.92861 152.0000 92.00000 157.7475 41.82438</span></span>
+<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a><span class="co">#&gt; 3 1.3436411  02_office     OFFICE 69.34364 145.6819 93.07619 157.7475 41.82438</span></span>
+<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a><span class="co">#&gt; 4 1.6147638    01_labs        LAB 69.61476 145.6819 93.07619 166.5409 42.28414</span></span>
+<span id="cb11-41"><a href="#cb11-41" tabindex="-1"></a><span class="co">#&gt; 5 1.7320540    01_labs        LAB 69.73205 145.6819 93.07619 165.8343 39.54794</span></span>
+<span id="cb11-42"><a href="#cb11-42" tabindex="-1"></a><span class="co">#&gt; 6 2.4933385    01_labs        LAB 70.49334 145.6819 93.07619 163.2855 38.29100</span></span>
+<span id="cb11-43"><a href="#cb11-43" tabindex="-1"></a><span class="co">#&gt;   diabetes smoker patient_id</span></span>
+<span id="cb11-44"><a href="#cb11-44" tabindex="-1"></a><span class="co">#&gt; 1     TRUE   TRUE         P2</span></span>
+<span id="cb11-45"><a href="#cb11-45" tabindex="-1"></a><span class="co">#&gt; 2     TRUE   TRUE         P2</span></span>
+<span id="cb11-46"><a href="#cb11-46" tabindex="-1"></a><span class="co">#&gt; 3     TRUE   TRUE         P2</span></span>
+<span id="cb11-47"><a href="#cb11-47" tabindex="-1"></a><span class="co">#&gt; 4     TRUE   TRUE         P2</span></span>
+<span id="cb11-48"><a href="#cb11-48" tabindex="-1"></a><span class="co">#&gt; 5     TRUE   TRUE         P2</span></span>
+<span id="cb11-49"><a href="#cb11-49" tabindex="-1"></a><span class="co">#&gt; 6     TRUE   TRUE         P2</span></span></code></pre></div>
+<p>A tiny summary:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>summarize_events <span class="ot">&lt;-</span> <span class="cf">function</span>(traj) {</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="fu">as.data.frame</span>(<span class="fu">table</span>(traj<span class="sc">$</span>event_type), <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>}</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="fu">list</span>(</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">P1_events =</span> <span class="fu">summarize_events</span>(traj1),</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  <span class="at">P2_events =</span> <span class="fu">summarize_events</span>(traj2)</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>)</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; $P1_events</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt;     Var1 Freq</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; 1    LAB    3</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; 2 OFFICE    2</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; $P2_events</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt;     Var1 Freq</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; 1    LAB    5</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; 2 OFFICE    1</span></span></code></pre></div>
+</div>
+</div>
+<div id="what-you-should-take-away" class="section level2">
+<h2>What you should take away</h2>
+<p>At this point, you should have:</p>
+<ul>
+<li>A clear mental model of <strong>multiple event processes</strong>
+(labs, visits, clinical events)</li>
+<li>A sense of what a <strong>schema</strong> is (the vocabulary)</li>
+<li>A sense of what a <strong>ModelBundle</strong> is (a portable
+container of components)</li>
+<li>A concrete <code>transition()</code> function (the engine that moves
+a patient forward)</li>
+</ul>
+<p>And, importantly, you did <em>not</em> need any EHR tables yet.</p>
+</div>
+<div id="where-we-go-next" class="section level2">
+<h2>Where we go next</h2>
+<p>From here, the tutorial zooms in:</p>
+<ul>
+<li><strong>Prepare basics:</strong> how raw longitudinal inputs become
+model training/test/validation (TTV) tables</li>
+<li><strong>Lenses:</strong> multiple time partitions for
+fast/medium/slow processes from the same source data</li>
+<li><strong>Training:</strong> swap toy components for trained submodels
+fit from prepared EHR tables</li>
+<li><strong>Forecasting:</strong> estimate patient-level risk over fixed
+horizons via repeated simulation runs</li>
+<li><strong>Validation:</strong> explicit masks/denominators,
+calibration, and goodness-of-fit</li>
+<li><strong>Orchestration:</strong> coordinate scenario runs and compose
+multiple models over one patient timeline</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
