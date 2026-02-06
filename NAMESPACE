@@ -1,2 +1,2 @@
-export(ascvd_model_bundle)
-export(ascvd_schema)
+# patientSimASCVD NAMESPACE (manual; vignette-only package)
+
