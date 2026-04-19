@@ -50,21 +50,13 @@ The vignettes are designed to be read in order.
 
 Later materials extend the same pipeline to validation, treatment optimization (future), and multi-model orchestration.
 
-## A minimal end-to-end example
+## A minimal example
 
-The snippet below runs the demonstration pipeline without exposing all details. The vignettes walk through each step in depth.
+The snippet below generates asynchronous, irregular EHR-like tutorial tables used throughout the vignettes.
 
 ```r
-library(patientSimASCVD)
-
-tables <- ascvd_simulate_tables(200)
-prepared <- ascvd_prepare_workflow(tables)
-
-# Event rate models (Poisson with dt offset)
-event_models <- ascvd_train_csc_models(prepared)  # planned rename: ascvd_train_event_rate_models()
-learned_bundle <- ascvd_learned_model_bundle(event_models)
-
-learned_bundle
+ehr <- patientSimASCVD:::ascvd_make_example_ehr(n_patients = 200, seed = 123)
+str(ehr, max.level = 1)
 ```
 
 ## What this package is not

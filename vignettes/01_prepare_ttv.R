@@ -95,7 +95,7 @@ knitr::kable(meds_2,     caption = "Medications for two example patients")
 
 
 ## ----time_mapping-------------------------------------------------------------
-ctx <- patientSimCore::ps_set_time_unit(
+ctx <- patientSimCore::set_time_unit(
   ctx = list(),
   unit = "weeks"
 )

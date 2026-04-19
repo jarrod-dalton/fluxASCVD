@@ -1,7 +1,7 @@
 Package: patientSimASCVD
 Type: Package
 Title: Example ASCVD Model for the patientSim Ecosystem
-Version: 1.3.13
+Version: 1.4.0
 Authors@R: person("Jarrod", "Dalton", email = "daltonj@ccf.org", role = c("aut","cre"))
 Description: Example atherosclerotic cardiovascular disease (ASCVD) model used to
     demonstrate the patientSim ecosystem. The package provides a simple,

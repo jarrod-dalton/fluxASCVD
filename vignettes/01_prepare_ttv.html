@@ -736,7 +736,7 @@ precisely the point.</p>
 <p>Simulation models operate in <em>relative</em> time (days, weeks,
 years), while EHR extracts typically use calendar dates. In this
 vignette, we will work in <strong>weeks</strong>.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>ctx <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">ps_set_time_unit</span>(</span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>ctx <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">set_time_unit</span>(</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">ctx =</span> <span class="fu">list</span>(),</span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">unit =</span> <span class="st">&quot;weeks&quot;</span></span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>)</span>
@@ -918,7 +918,7 @@ which column contains time via <code>time_col=</code>.</p>
 </table>
 <p>Internally, calendar dates are mapped onto a numeric time axis using
 the model’s time unit (weeks). The choice of origin (stored in
-<code>ps_time_spec()</code>) is arbitrary and does not affect interval
+<code>time_spec()</code>) is arbitrary and does not affect interval
 lengths or model behavior.</p>
 </div>
 <div id="step-2.-standardize-clinical-events" class="section level2">

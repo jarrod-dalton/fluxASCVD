@@ -1,16 +1,3 @@
-#' Generate small example "raw-ish" EHR tables for tutorials
-#'
-#' This function exists for vignette pedagogy. It produces asynchronous,
-#' irregularly-timed records across multiple domains (labs, vitals, events, meds),
-#' without attempting to align dates across tables.
-#'
-#' The tables use calendar dates (`Date`) to mirror typical EHR extracts.
-#'
-#' @param n_patients Integer. Number of patients.
-#' @param seed Integer. RNG seed for reproducibility.
-#'
-#' @return A named list with elements: patients, labs, vitals, events, meds.
-#' @keywords internal
 ascvd_make_example_ehr <- function(n_patients = 50, seed = 123) {
 
   set.seed(seed)

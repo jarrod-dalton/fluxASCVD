@@ -36,7 +36,7 @@ library(patientSimCore)
 # We do this in a shared "context" object (ctx), which is passed into the Engine
 # at run-time. Downstream packages can use ctx$time$unit to label and sanity-check
 # time-related quantities.
-ctx <- patientSimCore::ps_set_time_unit(ctx = list(), unit = "years")
+ctx <- patientSimCore::set_time_unit(ctx = list(), unit = "years")
 
 # patientSimCore schemas are named lists of variable descriptors.
 # Each variable has at least:
@@ -100,7 +100,7 @@ schema <- list(
 )
 
 # Optional: let Core check that this looks like a schema.
-ps_schema_validate(schema)
+schema_validate(schema)
 
 # Show the shape, without printing a wall of text.
 str(schema, max.level = 1)
