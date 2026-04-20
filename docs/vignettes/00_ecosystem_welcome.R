@@ -30,15 +30,15 @@ text(7.4, 2.6, "MI", pos = 4)
 
 
 ## ----schema-------------------------------------------------------------------
-library(patientSimCore)
+library(fluxCore)
 
 # Best practice: declare the model time unit up front.
 # We do this in a shared "context" object (ctx), which is passed into the Engine
 # at run-time. Downstream packages can use ctx$time$unit to label and sanity-check
 # time-related quantities.
-ctx <- patientSimCore::set_time_unit(ctx = list(), unit = "years")
+ctx <- fluxCore::set_time_unit(ctx = list(), unit = "years")
 
-# patientSimCore schemas are named lists of variable descriptors.
+# fluxCore schemas are named lists of variable descriptors.
 # Each variable has at least:
 #   - default: baseline value when init does not provide it
 #   - type: used by downstream summary/validation code
@@ -143,9 +143,9 @@ hazard_death <- function(state) {
 
 
 ## ----propose_events-----------------------------------------------------------
-propose_events <- function(patient, ctx = NULL, process_ids = NULL, current_proposals = NULL) {
-  t0 <- patient$last_time
-  s  <- patient$as_list(c("age","sbp","dbp","ldl","hdl","diabetes","smoker"))
+propose_events <- function(entity, ctx = NULL, process_ids = NULL, current_proposals = NULL) {
+  t0 <- entity$last_time
+  s  <- entity$as_list(c("age","sbp","dbp","ldl","hdl","diabetes","smoker"))
 
   proposals <- list()
 
@@ -189,11 +189,11 @@ propose_events <- function(patient, ctx = NULL, process_ids = NULL, current_prop
 
 
 ## ----transition---------------------------------------------------------------
-transition <- function(patient, event, ctx = NULL) {
+transition <- function(entity, event, ctx = NULL) {
   # Age updates deterministically from the model time unit (years in this vignette).
-  dt <- as.numeric(event$time_next - patient$last_time)
+  dt <- as.numeric(event$time_next - entity$last_time)
 
-  s <- patient$as_list(c("age","sbp","dbp","ldl","hdl","diabetes","smoker"))
+  s <- entity$as_list(c("age","sbp","dbp","ldl","hdl","diabetes","smoker"))
 
   changes <- list(age = s$age + dt)
 
@@ -213,16 +213,16 @@ transition <- function(patient, event, ctx = NULL) {
 
 
 ## ----stop---------------------------------------------------------------------
-stop <- function(patient, event, ctx = NULL) {
+stop <- function(entity, event, ctx = NULL) {
   identical(event$event_type, "DEATH")
 }
 
 
 ## ----observe------------------------------------------------------------------
-observe <- function(patient, event, ctx = NULL) {
-  s <- patient$as_list(c("age","sbp","dbp","ldl","hdl","diabetes","smoker"))
+observe <- function(entity, event, ctx = NULL) {
+  s <- entity$as_list(c("age","sbp","dbp","ldl","hdl","diabetes","smoker"))
   data.frame(
-    time       = patient$last_time,
+    time       = entity$last_time,
     process_id = event$process_id,
     event_type = event$event_type,
     age        = s$age,
@@ -237,7 +237,7 @@ observe <- function(patient, event, ctx = NULL) {
 
 
 ## ----refresh_rules------------------------------------------------------------
-refresh_rules <- function(patient, last_event, changes, ctx = NULL) {
+refresh_rules <- function(entity, last_event, changes, ctx = NULL) {
   "ALL"
 }
 
@@ -271,8 +271,8 @@ eng <- Engine$new(
 )
 
 
-## ----patients-----------------------------------------------------------------
-patient_low_risk <- list(
+## ----entities-----------------------------------------------------------------
+entity_low_risk <- list(
   id = "P1",
   age = 45,
   sbp = 118,
@@ -283,7 +283,7 @@ patient_low_risk <- list(
   smoker = FALSE
 )
 
-patient_high_risk <- list(
+entity_high_risk <- list(
   id = "P2",
   age = 68,
   sbp = 152,
@@ -294,30 +294,42 @@ patient_high_risk <- list(
   smoker = TRUE
 )
 
-patients <- list(patient_low_risk, patient_high_risk)
+entities <- list(entity_low_risk, entity_high_risk)
 
 
 ## ----simulate-----------------------------------------------------------------
-# Two patients, simulated for 2 years.
+# Two entities, simulated for 2 years.
 # We'll cap max_events so output stays readable even if a rate is high.
 max_events <- 200
 horizon_years <- 2
 
 # P1
-pid1 <- patient_low_risk$id
-init1 <- patient_low_risk; init1$id <- NULL
-p1 <- patientSimCore::new_patient(init = init1, schema = schema, time0 = 0, event_type0 = "init")
+pid1 <- entity_low_risk$id
+init1 <- entity_low_risk; init1$id <- NULL
+p1 <- fluxCore::new_entity(
+  init = init1,
+  schema = schema,
+  entity_type = "entity",
+  time0 = 0,
+  event_type0 = "init"
+)
 out1 <- eng$run(p1, max_events = max_events, max_time = horizon_years, return_observations = TRUE, ctx = ctx)
 traj1 <- out1$observations
-traj1$patient_id <- pid1
+traj1$entity_id <- pid1
 
 # P2
-pid2 <- patient_high_risk$id
-init2 <- patient_high_risk; init2$id <- NULL
-p2 <- patientSimCore::new_patient(init = init2, schema = schema, time0 = 0, event_type0 = "init")
+pid2 <- entity_high_risk$id
+init2 <- entity_high_risk; init2$id <- NULL
+p2 <- fluxCore::new_entity(
+  init = init2,
+  schema = schema,
+  entity_type = "entity",
+  time0 = 0,
+  event_type0 = "init"
+)
 out2 <- eng$run(p2, max_events = max_events, max_time = horizon_years, return_observations = TRUE, ctx = ctx)
 traj2 <- out2$observations
-traj2$patient_id <- pid2
+traj2$entity_id <- pid2
 
 traj1
 traj2
@@ -332,4 +344,3 @@ list(
   P1_events = summarize_events(traj1),
   P2_events = summarize_events(traj2)
 )
-

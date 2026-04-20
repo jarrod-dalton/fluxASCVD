@@ -16,7 +16,7 @@ on.exit(par(op), add = TRUE)
 
 t_max <- 10
 
-# Toy timeline for one patient (illustrative only)
+# Toy timeline for one entity (illustrative only)
 anchors <- c(0, 3, 7, 9)
 followup_end <- 9
 death_time <- 10
@@ -74,37 +74,37 @@ text(death_time + 0.15, 0.30, "death", srt = 90, adj = 0)
 
 
 ## ----ehr_load-----------------------------------------------------------------
-ehr <- patientSimASCVD:::ascvd_make_example_ehr(n_patients = 50, seed = 123)
+ehr <- fluxASCVD:::ascvd_make_example_ehr(n_entities = 50, seed = 123)
 
 
 ## ----ehr_tables, echo=FALSE, results='asis'-----------------------------------
-# For display, show two example patients across each longitudinal table
-example_ids <- as.character(sort(unique(ehr$patients$patient_id))[1:2])
+# For display, show two example entities across each longitudinal table
+example_ids <- as.character(sort(unique(ehr$entities$entity_id))[1:2])
 
-patients_2 <- ehr$patients[ehr$patients$patient_id %in% example_ids, , drop = FALSE]
-labs_2     <- ehr$labs[ehr$labs$patient_id %in% example_ids, , drop = FALSE]
-vitals_2   <- ehr$vitals[ehr$vitals$patient_id %in% example_ids, , drop = FALSE]
-events_2   <- ehr$events[ehr$events$patient_id %in% example_ids, , drop = FALSE]
-meds_2     <- ehr$meds[ehr$meds$patient_id %in% example_ids, , drop = FALSE]
+entities_2 <- ehr$entities[ehr$entities$entity_id %in% example_ids, , drop = FALSE]
+labs_2     <- ehr$labs[ehr$labs$entity_id %in% example_ids, , drop = FALSE]
+vitals_2   <- ehr$vitals[ehr$vitals$entity_id %in% example_ids, , drop = FALSE]
+events_2   <- ehr$events[ehr$events$entity_id %in% example_ids, , drop = FALSE]
+meds_2     <- ehr$meds[ehr$meds$entity_id %in% example_ids, , drop = FALSE]
 
-knitr::kable(patients_2, caption = "Patients (one row per patient)")
-knitr::kable(labs_2,     caption = "Labs (LDL/HDL) for two example patients")
-knitr::kable(vitals_2,   caption = "Vitals (SBP/DBP) for two example patients")
-knitr::kable(events_2,   caption = "Clinical events for two example patients")
-knitr::kable(meds_2,     caption = "Medications for two example patients")
+knitr::kable(entities_2, caption = "Patients (one row per entity)")
+knitr::kable(labs_2,     caption = "Labs (LDL/HDL) for two example entities")
+knitr::kable(vitals_2,   caption = "Vitals (SBP/DBP) for two example entities")
+knitr::kable(events_2,   caption = "Clinical events for two example entities")
+knitr::kable(meds_2,     caption = "Medications for two example entities")
 
 
 ## ----time_mapping-------------------------------------------------------------
-ctx <- patientSimCore::set_time_unit(
+ctx <- fluxCore::set_time_unit(
   ctx = list(),
   unit = "weeks"
 )
 
-example_ids <- head(ehr$patients$patient_id, 2)
+example_ids <- head(ehr$entities$entity_id, 2)
 
 
 ## ----prepare_library----------------------------------------------------------
-library(patientSimPrepare)
+library(fluxPrepare)
 
 
 ## ----prepare_observations-----------------------------------------------------
@@ -115,13 +115,13 @@ obs <- prepare_observations(
   ),
   specs = list(
     labs = list(
-      id_col   = "patient_id",
+      id_col   = "entity_id",
       time_col = "obs_date",
       vars     = c("ldl", "hdl"),
       group    = "labs"
     ),
     vitals = list(
-      id_col   = "patient_id",
+      id_col   = "entity_id",
       time_col = "obs_date",
       vars     = c("sbp", "dbp"),
       group    = "vitals"
@@ -131,7 +131,7 @@ obs <- prepare_observations(
 )
 
 obs |>
-  dplyr::filter(patient_id %in% example_ids) |>
+  dplyr::filter(entity_id %in% example_ids) |>
   head(10) |>
   knitr::kable()
 
@@ -139,14 +139,14 @@ obs |>
 ## ----prepare_events-----------------------------------------------------------
 events <- prepare_events(
   events    = ehr$events,
-  id_col    = "patient_id",
+  id_col    = "entity_id",
   time_col  = "event_date",
   type_col  = "event",
   ctx       = ctx
 )
 
 events |>
-  dplyr::filter(patient_id %in% example_ids) |>
+  dplyr::filter(entity_id %in% example_ids) |>
   head(10) |>
   knitr::kable()
 
@@ -155,10 +155,10 @@ events |>
 set.seed(1)
 
 splits_raw <- data.frame(
-  patient_id = ehr$patients$patient_id,
+  entity_id = ehr$entities$entity_id,
   split = sample(
     c("train", "test", "validation"),
-    size = nrow(ehr$patients),
+    size = nrow(ehr$entities),
     replace = TRUE,
     prob = c(0.70, 0.15, 0.15)
   ),
@@ -174,31 +174,31 @@ splits |>
 
 ## ----followup-----------------------------------------------------------------
 fu_obs <- obs |>
-  dplyr::group_by(patient_id) |>
+  dplyr::group_by(entity_id) |>
   dplyr::summarize(t_obs_min = min(time), .groups = "drop")
 
 fu_evt <- events |>
-  dplyr::group_by(patient_id) |>
+  dplyr::group_by(entity_id) |>
   dplyr::summarize(t_evt_min = min(time), .groups = "drop")
 
 fu_death <- events |>
   dplyr::filter(event_type == "death") |>
-  dplyr::group_by(patient_id) |>
+  dplyr::group_by(entity_id) |>
   dplyr::summarize(death_time = min(time), .groups = "drop")
 
 followup <- splits |>
-  dplyr::select(patient_id) |>
-  dplyr::left_join(fu_obs, by = "patient_id") |>
-  dplyr::left_join(fu_evt, by = "patient_id") |>
+  dplyr::select(entity_id) |>
+  dplyr::left_join(fu_obs, by = "entity_id") |>
+  dplyr::left_join(fu_evt, by = "entity_id") |>
   dplyr::mutate(
     followup_start = pmin(t_obs_min, t_evt_min, na.rm = TRUE),
     followup_end   = followup_start + (9 * 52)
   ) |>
-  dplyr::left_join(fu_death, by = "patient_id") |>
-  dplyr::select(patient_id, followup_start, followup_end, death_time)
+  dplyr::left_join(fu_death, by = "entity_id") |>
+  dplyr::select(entity_id, followup_start, followup_end, death_time)
 
 followup |>
-  dplyr::filter(patient_id %in% example_ids) |>
+  dplyr::filter(entity_id %in% example_ids) |>
   knitr::kable()
 
 
@@ -227,14 +227,14 @@ ttv_major <- build_ttv_event_process(
 )
 
 ttv_major |>
-  dplyr::filter(patient_id %in% example_ids) |>
+  dplyr::filter(entity_id %in% example_ids) |>
   head(12) |>
   knitr::kable()
 
 
 ## ----state_at_t0--------------------------------------------------------------
 anchors <- ttv_major |>
-  dplyr::select(patient_id, t0)
+  dplyr::select(entity_id, t0)
 
 state_t0 <- reconstruct_state_at(
   anchors      = anchors,
@@ -247,12 +247,12 @@ state_t0 <- reconstruct_state_at(
 ttv_major_cov <- ttv_major |>
   dplyr::left_join(
     state_t0 |>
-      dplyr::select(patient_id, t0, sbp, dbp, ldl, hdl),
-    by = c("patient_id", "t0")
+      dplyr::select(entity_id, t0, sbp, dbp, ldl, hdl),
+    by = c("entity_id", "t0")
   )
 
 ttv_major_cov |>
-  dplyr::filter(patient_id %in% example_ids) |>
+  dplyr::filter(entity_id %in% example_ids) |>
   head(8) |>
   knitr::kable()
 
@@ -272,7 +272,7 @@ ttv_bp <- build_ttv_state(
 )
 
 ttv_bp |>
-  dplyr::filter(patient_id %in% example_ids) |>
+  dplyr::filter(entity_id %in% example_ids) |>
   head(10) |>
   knitr::kable()
 

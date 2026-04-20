@@ -1,21 +1,18 @@
-Package: patientSimASCVD
+Package: fluxASCVD
 Type: Package
-Title: Example ASCVD Model for the patientSim Ecosystem
-Version: 1.4.0
+Title: Example ASCVD Model for the flux Ecosystem
+Version: 1.5.0
 Authors@R: person("Jarrod", "Dalton", email = "daltonj@ccf.org", role = c("aut","cre"))
 Description: Example atherosclerotic cardiovascular disease (ASCVD) model used to
-    demonstrate the patientSim ecosystem. The package provides a simple,
-    transparent patient-level simulation of ASCVD-related events, designed
+    demonstrate the flux ecosystem. The package provides a simple,
+    transparent entity-level simulation of ASCVD-related events, designed
     for instructional use and for illustrating Core, Forecast, and Validation
     workflows.
-License: Proprietary
+License: LGPL-3
 Encoding: UTF-8
 LazyData: true
 Imports:
-    patientSimCore (>= 1.3.3),
-    patientSimPrepare (>= 1.3.5),
-    patientSimForecast,
-    patientSimValidation,
-    R6
-Suggests: testthat (>= 3.0.0), knitr, rmarkdown, dplyr, tidyr, tibble
+    stats
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown, dplyr, tidyr, tibble,
+    fluxCore (>= 1.5.0), fluxPrepare (>= 1.5.0), fluxForecast (>= 1.5.0), fluxValidation (>= 1.5.0)
 VignetteBuilder: knitr

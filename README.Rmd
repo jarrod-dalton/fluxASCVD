@@ -2,25 +2,25 @@
 output: github_document
 ---
 
-# patientSimASCVD
+# fluxASCVD
 
-`patientSimASCVD` is a demonstration disease model built on top of the **patientSim** ecosystem. Its purpose is not to provide a
-definitive or clinically validated ASCVD risk model. Instead, it shows how the ecosystem supports end-to-end, patient-level modeling
-when time is irregular, patient state evolves dynamically, and statistical models are trained from EHR-style data rather than from
+`fluxASCVD` is a demonstration disease model built on top of the **flux** ecosystem. Its purpose is not to provide a
+definitive or clinically validated ASCVD risk model. Instead, it shows how the ecosystem supports end-to-end, entity-level modeling
+when time is irregular, entity state evolves dynamically, and statistical models are trained from EHR-style data rather than from
 idealized study tables.
 
 The package is designed to be read, not just run. It is meant to answer a practical question:
 
-> How do we go from a specified model schema, to simulated patient histories, to EHR-like observational data, to trained models,
+> How do we go from a specified model schema, to simulated entity histories, to EHR-like observational data, to trained models,
 > and then back into simulation as modular components?
 
 ## What this package demonstrates
 
 Patients evolve in continuous (irregular) time. Clinical measures such as blood pressure or laboratory values do not occur on a fixed
-grid. A patient’s risk trajectory for events such as myocardial infarction, stroke, or death is constantly and dynamically evolving
+grid. An entity’s risk trajectory for events such as myocardial infarction, stroke, or death is constantly and dynamically evolving
 over time, even when no new measurements are observed.
 
-The ASCVD example illustrates several core ideas that recur across the patientSim ecosystem.
+The ASCVD example illustrates several core ideas that recur across the flux ecosystem.
 
 First, **models are specified before data are prepared**. A model schema defines state variables, event processes, and time semantics.
 Only after that do we construct “lenses” that turn histories into EHR-style tables and analysis datasets.
@@ -55,7 +55,7 @@ Later materials extend the same pipeline to validation, treatment optimization (
 The snippet below generates asynchronous, irregular EHR-like tutorial tables used throughout the vignettes.
 
 ```r
-ehr <- patientSimASCVD:::ascvd_make_example_ehr(n_patients = 200, seed = 123)
+ehr <- fluxASCVD:::ascvd_make_example_ehr(n_entities = 200, seed = 123)
 str(ehr, max.level = 1)
 ```
 

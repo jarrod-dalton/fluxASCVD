@@ -12,7 +12,7 @@
 
 
 
-<title>patientSimPrepare: Building Train/Test/Validation (TTV) datasets from raw-ish EHR tables</title>
+<title>fluxPrepare: Building Train/Test/Validation (TTV) datasets from raw-ish EHR tables</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -337,7 +337,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<h1 class="title toc-ignore">patientSimPrepare: Building
+<h1 class="title toc-ignore">fluxPrepare: Building
 Train/Test/Validation (TTV) datasets from raw-ish EHR tables</h1>
 
 
@@ -347,7 +347,7 @@ Train/Test/Validation (TTV) datasets from raw-ish EHR tables</h1>
 <li><a href="#from-toy-models-to-probabilistic-models" id="toc-from-toy-models-to-probabilistic-models">From toy models to
 probabilistic models</a></li>
 <li><a href="#core-concepts-in-patientsimprepare" id="toc-core-concepts-in-patientsimprepare">Core concepts in
-patientSimPrepare</a></li>
+fluxPrepare</a></li>
 <li><a href="#raw-ish-ehr-tables" id="toc-raw-ish-ehr-tables">Raw-ish
 EHR tables</a></li>
 <li><a href="#preparing-time-to-variable-ttv-datasets" id="toc-preparing-time-to-variable-ttv-datasets">Preparing
@@ -369,7 +369,7 @@ Blood-pressure transitions via build_ttv_state()</a></li>
 
 <div id="why-this-package-exists" class="section level2">
 <h2>Why this package exists</h2>
-<p>The patientSim ecosystem is built around mechanistic, event-driven
+<p>The flux ecosystem is built around mechanistic, event-driven
 models of patient trajectories. In this framework, we do not begin with
 regression models applied directly to raw EHR tables. Instead, we begin
 by explicitly defining the processes by which patient state evolves over
@@ -385,11 +385,11 @@ that are often unrelated to death.</p>
 imposing an implicit time grid, silently carrying forward values, or
 discarding information that does not align neatly. Those choices encode
 assumptions, whether or not we acknowledge them.</p>
-<p>The patientSim framework takes the opposite approach. Time, events,
+<p>The flux framework takes the opposite approach. Time, events,
 and state are made <em>explicit</em>, and modeling assumptions are
 surfaced rather than buried. Models are constructed first, and <em>data
 are then viewed through those models</em>.</p>
-<p>The purpose of <code>patientSimPrepare</code> is to support this
+<p>The purpose of <code>fluxPrepare</code> is to support this
 philosophy by providing tools to construct model-aligned datasets from
 irregular longitudinal data, without prematurely committing to modeling
 choices that belong elsewhere in the ecosystem.</p>
@@ -412,7 +412,7 @@ data-generating process.</li>
 <p>Developing these models requires training data that respect the same
 temporal and causal structure that the simulation itself will
 enforce.</p>
-<p><code>patientSimPrepare</code> exists to build those training
+<p><code>fluxPrepare</code> exists to build those training
 datasets.</p>
 <p>Specifically, it constructs <em>train/test/validation (TTV)
 datasets</em> that are suitable for fitting probabilistic models of
@@ -424,19 +424,19 @@ ensures that the data used to <em>learn</em> those models are aligned
 with the mechanistic structure of the simulation.</p>
 </div>
 <div id="core-concepts-in-patientsimprepare" class="section level2">
-<h2>Core concepts in patientSimPrepare</h2>
+<h2>Core concepts in fluxPrepare</h2>
 <p>Before we touch any data, we need a shared vocabulary. The concepts
 introduced here appear repeatedly throughout the ecosystem. They exist
 to remove ambiguity rather than to add complexity.</p>
 <div id="anchors" class="section level3">
 <h3>Anchors</h3>
-<p>The general model structure in patientSim is event-driven, with state
+<p>The general model structure in flux is event-driven, with state
 reconstructed at clinically meaningful time points, which we call
 <strong>anchors</strong>.</p>
 <p>Commonly, in simulation modeling, a choice is made to impose a
 regular time grid (e.g., monthly intervals) and to align all data to
 that grid. This is a valid choice, but it is not the only choice, and it
-is not always the best choice. In patientSim, we allow for flexible
+is not always the best choice. In flux, we allow for flexible
 definitions of anchors that can be tailored to the specific modeling
 task at hand. As event sequences are made explicit in the model
 definition, a natural choice for anchors is the occurrence of events
@@ -445,7 +445,7 @@ infarction (MI) after a clinic visit, we might define anchors at each
 clinic visit and at the occurrence of MI. This allows us to reconstruct
 patient state at those clinically meaningful moments and to model
 transitions between them.</p>
-<p>The patientSimPrepare package reconstructs patient states - as
+<p>The fluxPrepare package reconstructs patient states - as
 defined by the model - as of each anchor. This is a critical step that
 ensures the training data for probabilistic models are aligned with the
 mechanistic structure of the simulation. By defining anchors in this
@@ -486,7 +486,7 @@ downstream validation.</p>
 the interval boundaries, the reconstructed state at the start of the
 interval, events occurring within the interval, and values of indicators
 as of the end of the interval. These tables are the primary outputs of
-<code>patientSimPrepare</code> and the primary inputs to downstream
+<code>fluxPrepare</code> and the primary inputs to downstream
 model training.</p>
 </div>
 <div id="a-visual-summary" class="section level3">
@@ -503,7 +503,7 @@ modeled. Follow-up is distinct from survival.</p>
 </div>
 <div id="raw-ish-ehr-tables" class="section level2">
 <h2>Raw-ish EHR tables</h2>
-<p>In applied work, <code>patientSimPrepare</code> typically receives
+<p>In applied work, <code>fluxPrepare</code> typically receives
 multiple longitudinal tables that were never designed to align with one
 another in time. Laboratory results, vitals, medications, and clinical
 events are recorded when care happens, not when a model would prefer
@@ -516,7 +516,7 @@ records, irregular timing, and partial observation.</p>
 <h3>Generating example tables</h3>
 <p>Below, we load some fake EHR tables, which are generated via an
 internal helper function:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>ehr <span class="ot">&lt;-</span> patientSimASCVD<span class="sc">:::</span><span class="fu">ascvd_make_example_ehr</span>(<span class="at">n_patients =</span> <span class="dv">50</span>, <span class="at">seed =</span> <span class="dv">123</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>ehr <span class="ot">&lt;-</span> fluxASCVD<span class="sc">:::</span><span class="fu">ascvd_make_example_ehr</span>(<span class="at">n_patients =</span> <span class="dv">50</span>, <span class="at">seed =</span> <span class="dv">123</span>)</span></code></pre></div>
 <p>We inspect these tables briefly to emphasize their lack of temporal
 alignment.</p>
 <table>
@@ -736,7 +736,7 @@ precisely the point.</p>
 <p>Simulation models operate in <em>relative</em> time (days, weeks,
 years), while EHR extracts typically use calendar dates. In this
 vignette, we will work in <strong>weeks</strong>.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>ctx <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">set_time_unit</span>(</span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>ctx <span class="ot">&lt;-</span> fluxCore<span class="sc">::</span><span class="fu">set_time_unit</span>(</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">ctx =</span> <span class="fu">list</span>(),</span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">unit =</span> <span class="st">&quot;weeks&quot;</span></span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>)</span>
@@ -745,7 +745,7 @@ vignette, we will work in <strong>weeks</strong>.</p>
 </div>
 <div id="the-prepare-workflow-standardize-segment-build" class="section level2">
 <h2>The Prepare workflow: standardize → segment → build</h2>
-<p>The goal of <code>patientSimPrepare</code> is to translate raw-ish
+<p>The goal of <code>fluxPrepare</code> is to translate raw-ish
 EHR tables into <strong>analysis-ready rows</strong> that can be used to
 train probabilistic components of a simulation model.</p>
 <p>The workflow has three main steps:</p>
@@ -767,7 +767,7 @@ start a new interval.”</p></li>
 Produce rows suitable for model training, with patient-level
 train/test/validation splits.</p></li>
 </ol>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">library</span>(patientSimPrepare)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">library</span>(fluxPrepare)</span></code></pre></div>
 </div>
 <div id="step-1.-standardize-observations-labs-and-vitals" class="section level2">
 <h2>Step 1. Standardize observations (labs and vitals)</h2>

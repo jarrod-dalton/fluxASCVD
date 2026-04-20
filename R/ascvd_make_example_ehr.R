@@ -1,34 +1,34 @@
-ascvd_make_example_ehr <- function(n_patients = 50, seed = 123) {
+ascvd_make_example_ehr <- function(n_entities = 50, seed = 123) {
 
   set.seed(seed)
 
   # Cohort entry dates (index date) spanning ~2 years
   index_date0 <- as.Date("2018-01-01")
-  index_date <- index_date0 + sample(0:700, n_patients, replace = TRUE)
+  index_date <- index_date0 + sample(0:700, n_entities, replace = TRUE)
 
-  patients <- data.frame(
-    patient_id = seq_len(n_patients),
+  entities <- data.frame(
+    entity_id = seq_len(n_entities),
     index_date = index_date,
-    sex = sample(c("F", "M"), n_patients, replace = TRUE),
+    sex = sample(c("F", "M"), n_entities, replace = TRUE),
     stringsAsFactors = FALSE
   )
 
-  # Helper: sample observation dates for each patient within follow-up window
+  # Helper: sample observation dates for each entity within follow-up window
   sample_obs_dates <- function(pid, n, max_days = 9 * 365) {
-    d0 <- patients$index_date[patients$patient_id == pid]
+    d0 <- entities$index_date[entities$entity_id == pid]
     d0 + sort(sample(0:max_days, n, replace = FALSE))
   }
 
   # LABS (LDL/HDL): episodic, irregular. Rounded to integers for presentation.
-  labs_list <- lapply(patients$patient_id, function(pid) {
+  labs_list <- lapply(entities$entity_id, function(pid) {
     n <- sample(2:6, 1)
     d <- sample_obs_dates(pid, n, max_days = 8 * 365)
 
     data.frame(
-      patient_id = pid,
+      entity_id = pid,
       obs_date = d,
-      ldl = as.integer(round(pmax(40, rnorm(n, 130, 25)))),
-      hdl = as.integer(round(pmax(10, rnorm(n, 50, 10))))
+      ldl = as.integer(round(pmax(40, stats::rnorm(n, 130, 25)))),
+      hdl = as.integer(round(pmax(10, stats::rnorm(n, 50, 10))))
     )
   })
   labs <- do.call(rbind, labs_list)
@@ -41,17 +41,17 @@ ascvd_make_example_ehr <- function(n_patients = 50, seed = 123) {
   sd_dbp <- 4
   rho <- 0.7
 
-  vitals_list <- lapply(patients$patient_id, function(pid) {
+  vitals_list <- lapply(entities$entity_id, function(pid) {
     n <- sample(3:7, 1)  # slightly denser than labs
     d <- sample_obs_dates(pid, n, max_days = 8 * 365)
 
-    z1 <- rnorm(n)
-    z2 <- rnorm(n)
+    z1 <- stats::rnorm(n)
+    z2 <- stats::rnorm(n)
     sbp <- mu_sbp + sd_sbp * z1
     dbp <- mu_dbp + sd_dbp * (rho * z1 + sqrt(1 - rho^2) * z2)
 
     data.frame(
-      patient_id = pid,
+      entity_id = pid,
       obs_date = d,
       sbp = as.integer(round(sbp)),
       dbp = as.integer(round(dbp))
@@ -61,12 +61,12 @@ ascvd_make_example_ehr <- function(n_patients = 50, seed = 123) {
 
   # CLINICAL EVENTS: ensure enough events to illustrate competing risks
   event_types <- c("office_visit", "hospitalization", "MI", "stroke")
-  events_list <- lapply(patients$patient_id, function(pid) {
-    # Moderate density: most patients have 1-4 events
+  events_list <- lapply(entities$entity_id, function(pid) {
+    # Moderate density: most entities have 1-4 events
     n <- sample(1:4, 1, prob = c(0.30, 0.30, 0.25, 0.15))
     d <- sample_obs_dates(pid, n, max_days = 9 * 365)
     data.frame(
-      patient_id = pid,
+      entity_id = pid,
       event_date = d,
       event = sample(event_types, n, replace = TRUE)
     )
@@ -74,20 +74,20 @@ ascvd_make_example_ehr <- function(n_patients = 50, seed = 123) {
   events <- do.call(rbind, events_list)
 
   # DEATH: a single record for a subset (competing risk)
-  death_ids <- sample(patients$patient_id, size = max(2, floor(0.10 * n_patients)), replace = FALSE)
+  death_ids <- sample(entities$entity_id, size = max(2, floor(0.10 * n_entities)), replace = FALSE)
   death_events <- do.call(rbind, lapply(death_ids, function(pid) {
-    d <- patients$index_date[patients$patient_id == pid] + sample(365:(10*365), 1)
-    data.frame(patient_id = pid, event_date = d, event = "death")
+    d <- entities$index_date[entities$entity_id == pid] + sample(365:(10*365), 1)
+    data.frame(entity_id = pid, event_date = d, event = "death")
   }))
   events <- rbind(events, death_events)
 
   # MEDICATIONS: mix of agents; start dates irregular
   med_types <- c("statin", "ace_inhibitor", "beta_blocker", "aspirin")
-  meds_list <- lapply(patients$patient_id, function(pid) {
+  meds_list <- lapply(entities$entity_id, function(pid) {
     n <- sample(1:4, 1, prob = c(0.25, 0.35, 0.25, 0.15))
     d <- sample_obs_dates(pid, n, max_days = 8 * 365)
     data.frame(
-      patient_id = pid,
+      entity_id = pid,
       start_date = d,
       medication = sample(med_types, n, replace = TRUE)
     )
@@ -95,13 +95,13 @@ ascvd_make_example_ehr <- function(n_patients = 50, seed = 123) {
   meds <- do.call(rbind, meds_list)
 
   # Order tables as typical EHR extracts
-  labs <- labs[order(labs$patient_id, labs$obs_date), ]
-  vitals <- vitals[order(vitals$patient_id, vitals$obs_date), ]
-  events <- events[order(events$patient_id, events$event_date), ]
-  meds <- meds[order(meds$patient_id, meds$start_date), ]
+  labs <- labs[order(labs$entity_id, labs$obs_date), ]
+  vitals <- vitals[order(vitals$entity_id, vitals$obs_date), ]
+  events <- events[order(events$entity_id, events$event_date), ]
+  meds <- meds[order(meds$entity_id, meds$start_date), ]
 
   list(
-    patients = patients,
+    entities = entities,
     labs = labs,
     vitals = vitals,
     events = events,

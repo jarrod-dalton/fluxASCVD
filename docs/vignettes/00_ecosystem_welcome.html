@@ -12,7 +12,7 @@
 
 
 
-<title>patientSim: an ecosystem for process-explicit, patient-level simulation</title>
+<title>flux: an ecosystem for process-explicit, patient-level simulation</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -337,7 +337,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<h1 class="title toc-ignore">patientSim: an ecosystem for
+<h1 class="title toc-ignore">flux: an ecosystem for
 process-explicit, patient-level simulation</h1>
 
 
@@ -370,7 +370,7 @@ regularity), or</li>
 <li><strong>Over-simplify</strong> processes (one outcome at a time, one
 “time-to-event” lens)</li>
 </ul>
-<p>The <em>patientSim</em> ecosystem exists to make a different
+<p>The <em>flux</em> ecosystem exists to make a different
 compromise:</p>
 <blockquote>
 <p>Be explicit about <strong>multiple event processes</strong> unfolding
@@ -378,7 +378,7 @@ within a patient, each with its own tempo, and let you view the
 <em>same</em> raw data through multiple <strong>lenses</strong> that
 match the modeling task.</p>
 </blockquote>
-<p>A second, equally important choice: <em>patientSim</em> is
+<p>A second, equally important choice: <em>flux</em> is
 <strong>model-first</strong>. You define the key components of your
 model <strong>before</strong> you look at any specific dataset, so teams
 can focus on mechanisms and co-evolution over time, rather than isolated
@@ -405,7 +405,7 @@ relationships among observed indicators.</p>
 <td>The dataset defines the model, implicitly</td>
 </tr>
 <tr class="even">
-<td>Model-first (patientSim)</td>
+<td>Model-first (flux)</td>
 <td>“What processes must exist to generate these data?”</td>
 <td>Over-specifying too early; mitigate by iterating from toy → fitted
 components</td>
@@ -462,38 +462,38 @@ an explicit contract.</p>
 </thead>
 <tbody>
 <tr class="odd">
-<td>patientSimCore</td>
+<td>fluxCore</td>
 <td>Owns simulation “truth”: timekeeping, patient state, event logs, and
 the engine that runs a model</td>
 </tr>
 <tr class="even">
-<td>patientSimPrepare</td>
+<td>fluxPrepare</td>
 <td>Transforms raw longitudinal inputs into model
 training/test/validation (<strong>TTV</strong>) tables (often under
 multiple lenses)</td>
 </tr>
 <tr class="odd">
-<td>patientSimForecast</td>
+<td>fluxForecast</td>
 <td>Read-only summaries and reporting views of simulated patient
 histories</td>
 </tr>
 <tr class="even">
-<td>patientSimValidation</td>
+<td>fluxValidation</td>
 <td>Evaluates simulated vs observed with explicit masks and
 denominators</td>
 </tr>
 <tr class="odd">
-<td>patientSimOrchestrate</td>
+<td>fluxOrchestrate</td>
 <td>Coordinates scenario runs and comparisons across bundles, or
 composes multiple bundles over one patient timeline</td>
 </tr>
 <tr class="even">
-<td>patientSimModelTemplate</td>
+<td>fluxModelTemplate</td>
 <td>A starting point for creating new model packages that follow
 ecosystem conventions</td>
 </tr>
 <tr class="odd">
-<td>patientSimASCVD</td>
+<td>fluxASCVD</td>
 <td>A didactic, worked example that ties the ecosystem together</td>
 </tr>
 </tbody>
@@ -515,15 +515,15 @@ scenarios).</p>
 <h3>1) Schema: what exists in the model world</h3>
 <p>A schema is the vocabulary of the model: state variables, event
 types, and basic conventions.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(patientSimCore)</span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(fluxCore)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co"># Best practice: declare the model time unit up front.</span></span>
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># We do this in a shared &quot;context&quot; object (ctx), which is passed into the Engine</span></span>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># at run-time. Downstream packages can use ctx$time$unit to label and sanity-check</span></span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># time-related quantities.</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>ctx <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">set_time_unit</span>(<span class="at">ctx =</span> <span class="fu">list</span>(), <span class="at">unit =</span> <span class="st">&quot;years&quot;</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>ctx <span class="ot">&lt;-</span> fluxCore<span class="sc">::</span><span class="fu">set_time_unit</span>(<span class="at">ctx =</span> <span class="fu">list</span>(), <span class="at">unit =</span> <span class="st">&quot;years&quot;</span>)</span>
 <span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co"># patientSimCore schemas are named lists of variable descriptors.</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co"># fluxCore schemas are named lists of variable descriptors.</span></span>
 <span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># Each variable has at least:</span></span>
 <span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#   - default: baseline value when init does not provide it</span></span>
 <span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#   - type: used by downstream summary/validation code</span></span>
@@ -632,7 +632,7 @@ types, and basic conventions.</p>
 <p>A <strong>ModelBundle</strong> is a single object that contains
 everything needed to simulate: it proposes candidate next events for one
 or more processes, applies state updates, and decides when to stop.</p>
-<p>patientSimCore expects a bundle with (at minimum):</p>
+<p>fluxCore expects a bundle with (at minimum):</p>
 <ul>
 <li><code>propose_events(patient, ctx, ...)</code> (multiple processes
 can propose an event)</li>
@@ -820,10 +820,10 @@ lab draw).</p>
 <span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; [5] &quot;refresh_rules&quot;</span></span></code></pre></div>
 </div>
 <div id="running-the-bundle-with-patientsimcores-engine" class="section level3">
-<h3>3) Running the bundle with patientSimCore’s Engine</h3>
+<h3>3) Running the bundle with fluxCore’s Engine</h3>
 <p>A quick note on <strong>providers</strong>: Core runs simulations by
 asking a <em>provider</em> for a model bundle.</p>
-<p>In <code>patientSimCore</code>, a provider is any object with a
+<p>In <code>fluxCore</code>, a provider is any object with a
 <code>$load(model_spec, ...)</code> method. Core ships with a few
 provider styles:</p>
 <ul>
@@ -898,7 +898,7 @@ enough to see how the structure works, without drowning in output.</p>
 <span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co"># P1</span></span>
 <span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>pid1 <span class="ot">&lt;-</span> patient_low_risk<span class="sc">$</span>id</span>
 <span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>init1 <span class="ot">&lt;-</span> patient_low_risk; init1<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">new_patient</span>(<span class="at">init =</span> init1, <span class="at">schema =</span> schema, <span class="at">time0 =</span> <span class="dv">0</span>, <span class="at">event_type0 =</span> <span class="st">&quot;init&quot;</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> fluxCore<span class="sc">::</span><span class="fu">new_patient</span>(<span class="at">init =</span> init1, <span class="at">schema =</span> schema, <span class="at">time0 =</span> <span class="dv">0</span>, <span class="at">event_type0 =</span> <span class="st">&quot;init&quot;</span>)</span>
 <span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>out1 <span class="ot">&lt;-</span> eng<span class="sc">$</span><span class="fu">run</span>(p1, <span class="at">max_events =</span> max_events, <span class="at">max_time =</span> horizon_years, <span class="at">return_observations =</span> <span class="cn">TRUE</span>, <span class="at">ctx =</span> ctx)</span>
 <span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>traj1 <span class="ot">&lt;-</span> out1<span class="sc">$</span>observations</span>
 <span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>traj1<span class="sc">$</span>patient_id <span class="ot">&lt;-</span> pid1</span>
@@ -906,7 +906,7 @@ enough to see how the structure works, without drowning in output.</p>
 <span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co"># P2</span></span>
 <span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>pid2 <span class="ot">&lt;-</span> patient_high_risk<span class="sc">$</span>id</span>
 <span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>init2 <span class="ot">&lt;-</span> patient_high_risk; init2<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> patientSimCore<span class="sc">::</span><span class="fu">new_patient</span>(<span class="at">init =</span> init2, <span class="at">schema =</span> schema, <span class="at">time0 =</span> <span class="dv">0</span>, <span class="at">event_type0 =</span> <span class="st">&quot;init&quot;</span>)</span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> fluxCore<span class="sc">::</span><span class="fu">new_patient</span>(<span class="at">init =</span> init2, <span class="at">schema =</span> schema, <span class="at">time0 =</span> <span class="dv">0</span>, <span class="at">event_type0 =</span> <span class="st">&quot;init&quot;</span>)</span>
 <span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>out2 <span class="ot">&lt;-</span> eng<span class="sc">$</span><span class="fu">run</span>(p2, <span class="at">max_events =</span> max_events, <span class="at">max_time =</span> horizon_years, <span class="at">return_observations =</span> <span class="cn">TRUE</span>, <span class="at">ctx =</span> ctx)</span>
 <span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>traj2 <span class="ot">&lt;-</span> out2<span class="sc">$</span>observations</span>
 <span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>traj2<span class="sc">$</span>patient_id <span class="ot">&lt;-</span> pid2</span>
