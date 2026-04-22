@@ -34,7 +34,7 @@ separately and can be plugged in as transition components.
 
 ## How to read the materials
 
-The vignettes are designed to be read in order.
+The package materials are designed to be read in order.
 
 1. **Defining the model schema and disease process**  
    Core artifacts: state variables, events, transitions, and stop semantics.
@@ -52,7 +52,7 @@ Later materials extend the same pipeline to validation, treatment optimization (
 
 ## A minimal example
 
-The snippet below generates asynchronous, irregular EHR-like tutorial tables used throughout the vignettes.
+The snippet below generates asynchronous, irregular EHR-like tutorial tables used throughout the example workflow.
 
 ```r
 ehr <- fluxASCVD:::ascvd_make_example_ehr(n_entities = 200, seed = 123)
