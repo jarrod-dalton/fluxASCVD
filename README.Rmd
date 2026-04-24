@@ -3,6 +3,10 @@ output: github_document
 ---
 
 # fluxASCVD
+[![Release](https://img.shields.io/github/v/release/jarrod-dalton/fluxASCVD?display_name=tag)](https://github.com/jarrod-dalton/fluxASCVD/releases)
+[![Downloads](https://img.shields.io/github/downloads/jarrod-dalton/fluxASCVD/total)](https://github.com/jarrod-dalton/fluxASCVD/releases)
+[![License: LGPL-3](https://img.shields.io/badge/license-LGPL--3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
+[![Language: R](https://img.shields.io/badge/language-R-276DC3?logo=r&logoColor=white)](https://www.r-project.org/)
 
 `fluxASCVD` is a demonstration disease model built on top of the **flux** ecosystem. Its purpose is not to provide a
 definitive or clinically validated ASCVD risk model. Instead, it shows how the ecosystem supports end-to-end, entity-level modeling
