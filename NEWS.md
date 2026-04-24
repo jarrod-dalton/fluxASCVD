@@ -1,3 +1,10 @@
+## fluxASCVD 1.8.0
+
+- Coordinated ecosystem release alignment to version 1.8.0.
+- Updated suggested dependency floors to `fluxCore`, `fluxPrepare`,
+  `fluxForecast`, and `fluxValidation` at `>= 1.8.0`.
+- Added README release/download badges; no model-logic changes.
+
 ## fluxASCVD 1.7.0
 
 - Coordinated ecosystem release alignment to version 1.7.0.
