@@ -1,7 +1,7 @@
 Package: fluxASCVD
 Type: Package
 Title: Example ASCVD Model for the flux Ecosystem
-Version: 1.8.0
+Version: 1.9.0
 Authors@R: person("Jarrod", "Dalton", email = "daltonj@ccf.org", role = c("aut","cre"))
 Description: Example atherosclerotic cardiovascular disease (ASCVD) model used to
     demonstrate the flux ecosystem. The package provides a simple,
@@ -14,5 +14,5 @@ LazyData: true
 Imports:
     stats
 Suggests: testthat (>= 3.0.0), knitr, rmarkdown, dplyr, tidyr, tibble,
-    fluxCore (>= 1.8.0), fluxPrepare (>= 1.8.0), fluxForecast (>= 1.8.0), fluxValidation (>= 1.8.0)
+    fluxCore (>= 1.9.0), fluxPrepare (>= 1.9.0), fluxForecast (>= 1.9.0), fluxValidation (>= 1.9.0)
 VignetteBuilder: knitr
