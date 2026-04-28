@@ -1,0 +1,90 @@
+
+# fluxASCVD
+
+[![Release](https://img.shields.io/github/v/release/jarrod-dalton/fluxASCVD?display_name=tag)](https://github.com/jarrod-dalton/fluxASCVD/releases)
+[![Downloads](https://img.shields.io/github/downloads/jarrod-dalton/fluxASCVD/total)](https://github.com/jarrod-dalton/fluxASCVD/releases)
+[![License:
+LGPL-3](https://img.shields.io/badge/license-LGPL--3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
+[![Language:
+R](https://img.shields.io/badge/language-R-276DC3?logo=r&logoColor=white)](https://www.r-project.org/)
+
+`fluxASCVD` is a demonstration disease model built on top of the
+**flux** ecosystem. Its purpose is not to provide a definitive or
+clinically validated ASCVD risk model. Instead, it shows how the
+ecosystem supports end-to-end, entity-level modeling when time is
+irregular, entity state evolves dynamically, and statistical models are
+trained from EHR-style data rather than from idealized study tables.
+
+The package is designed to be read, not just run. It is meant to answer
+a practical question:
+
+> How do we go from a specified model schema, to simulated entity
+> histories, to EHR-like observational data, to trained models, and then
+> back into simulation as modular components?
+
+## What this package demonstrates
+
+Patients evolve in continuous (irregular) time. Clinical measures such
+as blood pressure or laboratory values do not occur on a fixed grid. An
+entity’s risk trajectory for events such as myocardial infarction,
+stroke, or death is constantly and dynamically evolving over time, even
+when no new measurements are observed.
+
+The ASCVD example illustrates several core ideas that recur across the
+flux ecosystem.
+
+First, **models are specified before data are prepared**. A model schema
+defines state variables, event processes, and time semantics. Only after
+that do we construct “lenses” that turn histories into EHR-style tables
+and analysis datasets.
+
+Second, **EHR data are treated as a record, not as truth**. Blood
+pressure, lipid panels, and medication exposure are observed
+intermittently, on different schedules, and not in synchrony across
+domains.
+
+Third, **trained models can be swapped into the simulation**. In this
+package, event intensities are trained as Poisson rate models and used
+to propose competing events in continuous time. Dynamic models for state
+variables (blood pressure and lipids) are trained separately and can be
+plugged in as transition components.
+
+## How to read the materials
+
+The package materials are designed to be read in order.
+
+1.  **Defining the model schema and disease process**  
+    Core artifacts: state variables, events, transitions, and stop
+    semantics.
+
+2.  **From histories to EHR-style tables (Prepare)**  
+    Grouped tables, anchors, and the idea of an explicit “analysis
+    lens.”
+
+3.  **Training dynamic models from prepared data**  
+    Event rate models (Poisson) and state transition models (continuous,
+    ordinal, binary).
+
+4.  **Forecasting**  
+    Producing risk and trajectory summaries from a fitted model (before
+    validation).
+
+Later materials extend the same pipeline to validation, treatment
+optimization (future), and multi-model orchestration.
+
+## A minimal example
+
+The snippet below generates asynchronous, irregular EHR-like tutorial
+tables used throughout the example workflow.
+
+``` r
+ehr <- fluxASCVD:::ascvd_make_example_ehr(n_entities = 200, seed = 123)
+str(ehr, max.level = 1)
+```
+
+## What this package is not
+
+This package is not intended to deliver clinical risk predictions or
+reproduce published ASCVD calculators. Model structure, covariates, and
+parameters are deliberately simplified to keep the focus on architecture
+and workflow rather than on clinical performance.
