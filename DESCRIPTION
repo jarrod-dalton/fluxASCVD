@@ -16,3 +16,5 @@ Imports:
 Suggests: testthat (>= 3.0.0), knitr, rmarkdown, dplyr, tidyr, tibble,
     fluxCore (>= 1.10.0), fluxPrepare (>= 1.10.0), fluxForecast (>= 1.10.0), fluxValidation (>= 1.10.0)
 VignetteBuilder: knitr
+Author: Jarrod Dalton [aut, cre]
+Maintainer: Jarrod Dalton <daltonj@ccf.org>
